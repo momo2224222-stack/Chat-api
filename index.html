@@ -466,6 +466,16 @@
       text-align: center;
     }
 
+    .main.empty-chat .empty {
+      min-height: 50%;
+      align-content: end;
+      padding-bottom: 34px;
+    }
+
+    .main.empty-chat .empty h1 {
+      margin-bottom: 18px;
+    }
+
     .empty h1 {
       margin: 0 0 22px;
       font-size: clamp(28px, 4vw, 34px);
@@ -2387,9 +2397,48 @@
     }
 
     function titleFromMessages(messages) {
-      const firstUser = messages.find(m => m.role === "user");
-      if (!firstUser) return "";
-      return firstUser.content.trim().replace(/\s+/g, " ").slice(0, 32) || "新聊天";
+      return summarizeMessagesForTitle(messages) || "新聊天";
+    }
+
+    function sessionDisplayTitle(session) {
+      return summarizeMessagesForTitle(session.messages) || session.title || "新聊天";
+    }
+
+    function summarizeMessagesForTitle(messages) {
+      const turns = (messages || []).filter(message =>
+        message && (message.role === "user" || message.role === "assistant")
+      );
+      const latestUser = [...turns].reverse().find(message => message.role === "user");
+      const firstUser = turns.find(message => message.role === "user");
+      const latestAssistant = [...turns].reverse().find(message => message.role === "assistant");
+      const hasImage = Boolean(latestAssistant?.attachments?.some(item => item.kind === "image"));
+      const source = latestUser?.content || firstUser?.content || latestAssistant?.content || "";
+      const summary = compactSessionSummaryText(source);
+      if (hasImage && summary) return trimSessionSummary("图片 " + summary);
+      if (hasImage) return "图片生成";
+      return summary;
+    }
+
+    function compactSessionSummaryText(value) {
+      const text = normalizeMessageContent(value)
+        .replace(/```[\s\S]*?```/g, " 代码 ")
+        .replace(/!\[[^\]]*\]\([^)]+\)/g, " 图片 ")
+        .replace(/\[[^\]]+\]\([^)]+\)/g, "链接")
+        .replace(/https?:\/\/\S+/g, "链接")
+        .replace(/(?:文件|附件)：[^\n]+/g, "")
+        .replace(/^(?:(?:生成图片|生图|图片)\s*[：:]\s*)+/g, "")
+        .replace(/^请针对下面这段内容回答我的问题[：:]\s*/g, "")
+        .replace(/\n+\s*我的问题[：:]\s*$/g, "")
+        .replace(/[>#*_`~|[\](){}]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      return trimSessionSummary(text);
+    }
+
+    function trimSessionSummary(text) {
+      const clean = String(text || "").replace(/^[，。！？、,.!?:：;\-\s]+/, "").trim();
+      if (!clean) return "";
+      return clean.length > 34 ? clean.slice(0, 34).trim() + "..." : clean;
     }
 
     function renderAll() {
@@ -2428,12 +2477,13 @@
           session.id === state.currentSessionId ? "active" : "",
           isSessionGenerating(session.id) ? "generating" : ""
         ].filter(Boolean).join(" ");
-        row.title = session.title;
+        const displayTitle = sessionDisplayTitle(session);
+        row.title = displayTitle;
         row.dataset.id = session.id;
 
         const title = document.createElement("button");
         title.className = "session-title";
-        title.textContent = session.title || "新聊天";
+        title.textContent = displayTitle;
         title.addEventListener("click", () => switchSession(session.id));
 
         const rename = document.createElement("button");
@@ -2513,6 +2563,7 @@
     function sessionMatchesQuery(session, query) {
       const normalized = query.toLowerCase();
       if (String(session.title || "").toLowerCase().includes(normalized)) return true;
+      if (sessionDisplayTitle(session).toLowerCase().includes(normalized)) return true;
       if (formatDate(session.createdAt).toLowerCase().includes(normalized)) return true;
       if (formatDate(session.updatedAt).toLowerCase().includes(normalized)) return true;
       return session.messages.some(m => {
@@ -2607,12 +2658,43 @@
 
     function setBubbleContent(bubble, content, plain = false) {
       const normalized = normalizeMessageContent(content);
-      if (plain) {
+      const renderStreamingCode = plain && hasFencedCode(normalized);
+      if (renderStreamingCode) {
+        bubble.innerHTML = renderStreamingCodeContent(normalized);
+      } else if (plain) {
         bubble.textContent = normalized;
       } else {
         bubble.innerHTML = renderContent(normalized);
       }
-      bubble.classList.toggle("streaming-plain", plain);
+      bubble.classList.toggle("streaming-plain", plain && !renderStreamingCode);
+    }
+
+    function hasFencedCode(value) {
+      return /(^|\n)\s*```/.test(normalizeMessageContent(value));
+    }
+
+    function renderStreamingCodeContent(value) {
+      const source = normalizeMessageContent(value).replace(/\r\n/g, "\n");
+      return parseFencedMarkdown(source).map(part => {
+        if (part.type === "code") return renderStreamingCodeBlock(part.code, part.language);
+        const text = escapeHtml(part.text || "").replace(/\n/g, "<br>");
+        return text.trim() ? `<p>${text}</p>` : "";
+      }).join("");
+    }
+
+    function renderStreamingCodeBlock(code, language) {
+      const lang = normalizeCodeLanguage(language);
+      const raw = stripOddControlChars(code || "").replace(/\n+$/, "");
+      const encoded = encodeURIComponent(raw);
+      return [
+        `<div class="code-block" data-code="${encoded}">`,
+        '<div class="code-head">',
+        `<div class="code-lang"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></svg><span>${escapeHtml(lang.label)}</span></div>`,
+        '<button class="code-copy" type="button" title="复制代码"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>',
+        '</div>',
+        `<pre><code>${escapeHtml(raw)}</code></pre>`,
+        '</div>'
+      ].join("");
     }
 
     function getVisibleMessageContent(message) {
