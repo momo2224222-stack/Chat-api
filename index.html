@@ -1,0 +1,4448 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/jpeg" href="chatgpt-icon.jpg" />
+  <link rel="shortcut icon" type="image/jpeg" href="chatgpt-icon.jpg" />
+  <title>童博GPT</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #ffffff;
+      --panel: #f9f9f9;
+      --sidebar: #f7f7f8;
+      --sidebar-border: #e5e5e5;
+      --text: #0d0d0d;
+      --muted: #6b6b6b;
+      --soft: #ececec;
+      --hover: #ededed;
+      --active: #e7e7e7;
+      --button: #0d0d0d;
+      --button-text: #ffffff;
+      --danger: #d92d20;
+      --accent: #10a37f;
+      --shadow: 0 18px 45px rgba(0, 0, 0, 0.16);
+      --radius: 8px;
+      --sidebar-width: 252px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      height: 100vh;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+      letter-spacing: 0;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+      background: transparent;
+      color: inherit;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+      height: 100vh;
+      min-width: 320px;
+      transition: grid-template-columns 0.18s ease;
+    }
+
+    .app.sidebar-collapsed {
+      grid-template-columns: 0 minmax(0, 1fr);
+    }
+
+    .sidebar {
+      display: flex;
+      min-width: 0;
+      min-height: 0;
+      flex-direction: column;
+      background: var(--sidebar);
+      border-right: 1px solid var(--sidebar-border);
+      overflow: hidden;
+      transition: transform 0.18s ease, border-color 0.18s ease;
+    }
+
+    .app.sidebar-collapsed .sidebar {
+      transform: translateX(-100%);
+      border-right-color: transparent;
+    }
+
+    .side-top {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 14px 14px 18px;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 64px;
+      height: 64px;
+      color: #111111;
+    }
+
+    .brand-mark img {
+      width: 54px;
+      height: 54px;
+      display: block;
+      object-fit: contain;
+    }
+
+    .side-tools {
+      display: grid;
+      gap: 3px;
+      padding: 0 12px 8px;
+    }
+
+    .tool-btn {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 10px;
+      min-height: 40px;
+      padding: 0 8px;
+      border-radius: 9px;
+      color: #111111;
+      font-size: 14px;
+    }
+
+    .tool-btn:hover {
+      background: var(--hover);
+    }
+
+    .tool-btn .icon {
+      width: 21px;
+      height: 21px;
+    }
+
+    .side-search {
+      display: none;
+      padding: 0 12px 10px;
+    }
+
+    .sidebar.search-open .side-search {
+      display: block;
+    }
+
+    .side-search input {
+      width: 100%;
+      height: 38px;
+      border: 1px solid var(--soft);
+      border-radius: var(--radius);
+      outline: 0;
+      background: #ffffff;
+      color: var(--text);
+      padding: 0 12px;
+      font-size: 13px;
+    }
+
+    .side-search input:focus {
+      border-color: #b8b8b8;
+      box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .side-section-label {
+      padding: 4px 14px 6px;
+      color: #9a9a9a;
+      font-size: 12px;
+      line-height: 1.2;
+    }
+
+    .icon-btn,
+    .small-btn,
+    .primary-btn,
+    .ghost-btn {
+      min-height: 38px;
+      border-radius: var(--radius);
+      transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+    }
+
+    .icon-btn:hover,
+    .small-btn:hover,
+    .ghost-btn:hover {
+      background: var(--hover);
+    }
+
+    .icon {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+    }
+
+    .icon-btn {
+      display: inline-grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      color: #333333;
+    }
+
+    .sessions {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 0 8px 8px;
+    }
+
+    .session {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 28px 28px;
+      align-items: center;
+      gap: 4px;
+      height: 38px;
+      padding: 0 3px 0 10px;
+      border-radius: var(--radius);
+      color: #111111;
+      font-size: 14px;
+      font-weight: 540;
+    }
+
+    .session:hover {
+      background: var(--hover);
+    }
+
+    .session.active {
+      background: var(--active);
+    }
+
+    .session.generating {
+      animation: sessionGeneratingPulse 1.35s ease-in-out infinite;
+    }
+
+    .session.generating::before {
+      content: "";
+      position: absolute;
+      left: 4px;
+      width: 4px;
+      height: 18px;
+      border-radius: 999px;
+      background: var(--accent);
+      animation: sessionGeneratingDot 1.35s ease-in-out infinite;
+    }
+
+    @keyframes sessionGeneratingPulse {
+      0%, 100% {
+        background: rgba(16, 163, 127, 0.08);
+      }
+      50% {
+        background: rgba(13, 13, 13, 0.12);
+      }
+    }
+
+    @keyframes sessionGeneratingDot {
+      0%, 100% {
+        opacity: 0.35;
+      }
+      50% {
+        opacity: 1;
+      }
+    }
+
+    .session-title {
+      width: 100%;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      text-align: left;
+      color: #111111;
+      font-weight: 540;
+    }
+
+    .empty-sessions {
+      padding: 14px 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .rename-session,
+    .delete-session {
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      color: #777777;
+      opacity: 0;
+    }
+
+    .session:hover .rename-session,
+    .session.active .rename-session,
+    .session:hover .delete-session,
+    .session.active .delete-session {
+      opacity: 1;
+    }
+
+    .rename-session:hover {
+      color: #111111;
+      background: #ffffff;
+    }
+
+    .delete-session:hover {
+      color: var(--danger);
+      background: #ffffff;
+    }
+
+    .rename-input {
+      width: 100%;
+      height: 32px;
+      border: 1px solid #cfcfcf;
+      border-radius: 7px;
+      outline: 0;
+      padding: 0 8px;
+      background: #ffffff;
+      font-size: 14px;
+    }
+
+    .delete-confirm {
+      position: absolute;
+      right: 8px;
+      top: 38px;
+      z-index: 5;
+      display: grid;
+      gap: 8px;
+      width: 176px;
+      padding: 10px;
+      border: 1px solid #dddddd;
+      border-radius: 10px;
+      background: #ffffff;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+    }
+
+    .delete-confirm::before {
+      content: "";
+      position: absolute;
+      right: 13px;
+      top: -6px;
+      width: 10px;
+      height: 10px;
+      border-left: 1px solid #dddddd;
+      border-top: 1px solid #dddddd;
+      background: #ffffff;
+      transform: rotate(45deg);
+    }
+
+    .delete-confirm-text {
+      color: #222222;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .delete-confirm-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+    }
+
+    .delete-confirm-actions button {
+      min-height: 30px;
+      padding: 0 10px;
+      border-radius: 7px;
+      font-size: 12px;
+    }
+
+    .delete-cancel {
+      background: #f3f3f3;
+      color: #333333;
+    }
+
+    .delete-ok {
+      background: #111111;
+      color: #ffffff;
+    }
+
+    .side-actions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      padding: 10px 12px 12px;
+      border-top: 1px solid var(--sidebar-border);
+    }
+
+    .small-btn,
+    .ghost-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 10px;
+      border: 1px solid var(--soft);
+      background: #ffffff;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .main {
+      position: relative;
+      display: flex;
+      min-width: 0;
+      min-height: 0;
+      flex-direction: column;
+      background: var(--bg);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 56px;
+      padding: 8px 16px;
+      border-bottom: 1px solid transparent;
+    }
+
+    .mobile-menu {
+      display: inline-grid;
+    }
+
+    .title-wrap {
+      display: flex;
+      min-width: 0;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .app-title {
+      max-width: min(56vw, 620px);
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      font-weight: 600;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .model-pill {
+      min-width: 0;
+      max-width: min(44vw, 520px);
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .messages {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 24px 0 30px;
+      scroll-behavior: smooth;
+    }
+
+    .main.empty-chat .messages {
+      flex: 1;
+      padding-bottom: 210px;
+    }
+
+    .empty {
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      min-height: 100%;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .empty h1 {
+      margin: 0 0 22px;
+      font-size: clamp(28px, 4vw, 34px);
+      font-weight: 400;
+    }
+
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      width: min(680px, 100%);
+    }
+
+    .quick {
+      min-height: 68px;
+      padding: 12px 14px;
+      border: 1px solid var(--soft);
+      border-radius: var(--radius);
+      text-align: left;
+      background: #ffffff;
+      color: #333333;
+    }
+
+    .quick:hover {
+      background: var(--panel);
+    }
+
+    .quick strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .quick span {
+      display: block;
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .message-row {
+      width: 100%;
+      padding: 18px 20px;
+    }
+
+    .message-row.user {
+      padding-top: 12px;
+      padding-bottom: 12px;
+    }
+
+    .message-inner {
+      display: block;
+      width: min(980px, 100%);
+      margin: 0 auto;
+    }
+
+    .message-row.user .message-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: flex-end;
+    }
+
+    .avatar {
+      display: none;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #0d0d0d;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .avatar.assistant {
+      background: var(--accent);
+    }
+
+    .message-row.user .avatar {
+      display: none;
+    }
+
+    .bubble {
+      min-width: 0;
+      padding-top: 0;
+      color: #1f1f1f;
+      line-height: 1.72;
+      font-size: 15px;
+      overflow-wrap: anywhere;
+    }
+
+    .message-row.user .bubble {
+      max-width: min(780px, 90%);
+      margin-left: auto;
+      padding: 11px 15px;
+      border-radius: 18px;
+      background: #f3f3f3;
+      color: #1f1f1f;
+      line-height: 1.55;
+    }
+
+    .message-row.assistant .bubble {
+      max-width: 100%;
+      padding: 2px 0;
+    }
+
+    .message-row.assistant .bubble.streaming-plain {
+      white-space: pre-wrap;
+    }
+
+    .message-row.assistant .bubble.empty-bubble {
+      display: none;
+    }
+
+    .message-copy-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 28px;
+      margin-top: 6px;
+      padding: 0 8px;
+      border-radius: 8px;
+      color: #8a8a8a;
+      font-size: 12px;
+    }
+
+    .message-copy-btn:hover {
+      background: #f1f1f1;
+      color: #333333;
+    }
+
+    .message-row.user .message-copy-btn {
+      align-self: flex-end;
+    }
+
+    .thinking-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 24px;
+      margin-top: 2px;
+      color: #9a9a9a;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .thinking-status.active {
+      animation: thinkingTextPulse 1.35s ease-in-out infinite;
+    }
+
+    .thinking-status.finished {
+      color: #a4a4a4;
+    }
+
+    .thinking-dot {
+      flex: 0 0 26px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 10px 0 0 currentColor, 20px 0 0 currentColor;
+      animation: thinkingDots 1.15s ease-in-out infinite;
+    }
+
+    .thinking-status.finished .thinking-dot {
+      display: none;
+    }
+
+    @keyframes thinkingTextPulse {
+      0%, 100% {
+        opacity: 0.48;
+      }
+      50% {
+        opacity: 1;
+      }
+    }
+
+    @keyframes thinkingDots {
+      0%, 100% {
+        opacity: 0.35;
+        transform: translateY(1px);
+      }
+      50% {
+        opacity: 1;
+        transform: translateY(-1px);
+      }
+    }
+
+    .message-attachments {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+      max-width: min(780px, 90%);
+      margin: 8px 0 0 auto;
+    }
+
+    .message-row.assistant .message-attachments {
+      justify-content: flex-start;
+      margin-left: 0;
+      margin-right: auto;
+    }
+
+    .message-attachment {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid #e1e1e1;
+      border-radius: 14px;
+      background: #f7f7f7;
+    }
+
+    .message-attachment.image {
+      width: auto;
+      height: auto;
+      max-width: min(420px, 100%);
+      background: #eeeeee;
+    }
+
+    .message-attachment.image img {
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: 360px;
+      display: block;
+      object-fit: contain;
+    }
+
+    .image-preview-btn {
+      display: block;
+      padding: 0;
+      background: transparent;
+      cursor: zoom-in;
+    }
+
+    .image-download-btn {
+      position: absolute;
+      right: 8px;
+      bottom: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: auto;
+      min-height: 36px;
+      padding: 0 12px;
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.58);
+      color: #111111;
+      font-size: 13px;
+      font-weight: 520;
+      backdrop-filter: blur(8px);
+    }
+
+    .image-download-btn:hover {
+      background: rgba(255, 255, 255, 0.82);
+    }
+
+    .image-generate-visual {
+      position: relative;
+      width: min(280px, 100%);
+      height: 156px;
+      margin-top: 12px;
+      overflow: hidden;
+      border: 1px solid #dfe4ea;
+      border-radius: 16px;
+      background:
+        radial-gradient(circle at 24% 30%, rgba(11, 132, 255, 0.22), transparent 24%),
+        radial-gradient(circle at 78% 64%, rgba(16, 163, 127, 0.20), transparent 26%),
+        linear-gradient(135deg, #f8fbff, #eef4f8);
+    }
+
+    .image-generate-visual::before {
+      content: "";
+      position: absolute;
+      inset: 14px;
+      border-radius: 12px;
+      background:
+        linear-gradient(145deg, transparent 48%, rgba(16, 163, 127, 0.36) 49%, rgba(16, 163, 127, 0.36) 56%, transparent 57%),
+        linear-gradient(35deg, transparent 52%, rgba(11, 132, 255, 0.34) 53%, rgba(11, 132, 255, 0.34) 62%, transparent 63%),
+        rgba(255, 255, 255, 0.72);
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+      animation: imageCanvasPulse 1.7s ease-in-out infinite;
+    }
+
+    .image-generate-visual::after {
+      content: "";
+      position: absolute;
+      top: -40%;
+      left: -35%;
+      width: 46%;
+      height: 190%;
+      transform: rotate(18deg);
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.85), transparent);
+      animation: imageBrushSweep 1.55s ease-in-out infinite;
+    }
+
+    .image-generate-dot {
+      position: absolute;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #0b84ff;
+      animation: imageSpark 1.4s ease-in-out infinite;
+    }
+
+    .image-generate-dot:nth-child(1) {
+      left: 62px;
+      top: 42px;
+      animation-delay: 0s;
+    }
+
+    .image-generate-dot:nth-child(2) {
+      right: 70px;
+      top: 58px;
+      background: #10a37f;
+      animation-delay: 0.22s;
+    }
+
+    .image-generate-dot:nth-child(3) {
+      left: 136px;
+      bottom: 42px;
+      background: #111111;
+      animation-delay: 0.44s;
+    }
+
+    @keyframes imageCanvasPulse {
+      0%, 100% {
+        opacity: 0.62;
+        transform: scale(0.985);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes imageBrushSweep {
+      0% {
+        left: -42%;
+        opacity: 0;
+      }
+      25%, 70% {
+        opacity: 1;
+      }
+      100% {
+        left: 104%;
+        opacity: 0;
+      }
+    }
+
+    @keyframes imageSpark {
+      0%, 100% {
+        opacity: 0.25;
+        transform: translateY(4px) scale(0.7);
+      }
+      50% {
+        opacity: 1;
+        transform: translateY(-4px) scale(1);
+      }
+    }
+
+    .message-attachment.file {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      max-width: 260px;
+      min-height: 50px;
+      padding: 8px 10px;
+      color: #333333;
+      font-size: 13px;
+    }
+
+    .message-attachment.file .attachment-thumb {
+      width: 34px;
+      height: 34px;
+    }
+
+    .message-time {
+      width: min(980px, 100%);
+      margin: 0 auto 6px;
+      color: #8a8a8a;
+      font-size: 12px;
+      line-height: 1.2;
+    }
+
+    .message-row.user .message-time {
+      text-align: right;
+      padding-right: 2px;
+    }
+
+    .message-row.assistant .message-time {
+      text-align: left;
+    }
+
+    .bubble p {
+      margin: 0 0 12px;
+    }
+
+    .bubble p:last-child {
+      margin-bottom: 0;
+    }
+
+    .bubble h1,
+    .bubble h2,
+    .bubble h3 {
+      margin: 18px 0 10px;
+      line-height: 1.32;
+      font-weight: 650;
+    }
+
+    .bubble h1 {
+      font-size: 24px;
+    }
+
+    .bubble h2 {
+      font-size: 20px;
+    }
+
+    .bubble h3 {
+      font-size: 17px;
+    }
+
+    .bubble ul,
+    .bubble ol {
+      margin: 8px 0 14px 22px;
+      padding: 0;
+    }
+
+    .bubble li {
+      margin: 5px 0;
+      padding-left: 2px;
+    }
+
+    .bubble blockquote {
+      margin: 12px 0;
+      padding: 2px 0 2px 14px;
+      border-left: 3px solid #d0d0d0;
+      color: #4f4f4f;
+    }
+
+    .bubble table {
+      width: 100%;
+      margin: 14px 0;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .bubble th,
+    .bubble td {
+      border: 1px solid #dedede;
+      padding: 8px 10px;
+      vertical-align: top;
+    }
+
+    .bubble th {
+      background: #f6f6f6;
+      font-weight: 650;
+    }
+
+    .bubble a {
+      color: #0b6bcb;
+      text-decoration: none;
+    }
+
+    .bubble a:hover {
+      text-decoration: underline;
+    }
+
+    .bubble strong {
+      font-weight: 650;
+    }
+
+    .bubble hr {
+      height: 1px;
+      margin: 18px 0;
+      border: 0;
+      background: #dedede;
+    }
+
+    .bubble code {
+      padding: 2px 5px;
+      border-radius: 5px;
+      background: #f0f0f0;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 0.92em;
+    }
+
+    .code-block {
+      overflow: hidden;
+      margin: 14px 0 18px;
+      border: 1px solid #ececec;
+      border-radius: 18px;
+      background: #f7f7f8;
+    }
+
+    .code-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      height: 44px;
+      padding: 0 14px 0 18px;
+      color: #171717;
+      background: #f7f7f8;
+      font-size: 14px;
+    }
+
+    .code-lang {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      font-weight: 500;
+    }
+
+    .code-copy {
+      display: inline-grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      color: #333333;
+    }
+
+    .code-copy:hover {
+      background: #e8e8e8;
+    }
+
+    .code-block pre {
+      overflow: auto;
+      margin: 0;
+      padding: 16px 18px 18px;
+      color: #1f2328;
+      background: #f7f7f8;
+      line-height: 1.55;
+      font-size: 14px;
+      tab-size: 2;
+    }
+
+    .code-block code {
+      padding: 0;
+      background: transparent;
+      color: inherit;
+      font-size: inherit;
+    }
+
+    .tok-keyword,
+    .tok-builtin {
+      color: #7c3aed;
+    }
+
+    .tok-string {
+      color: #0a7f3f;
+    }
+
+    .tok-number {
+      color: #b45309;
+    }
+
+    .tok-comment {
+      color: #7a7a7a;
+    }
+
+    .tok-variable {
+      color: #6d28d9;
+    }
+
+    .composer-shell {
+      position: relative;
+      z-index: 4;
+      margin-top: -72px;
+      padding: 66px 16px 18px;
+      background: transparent;
+    }
+
+    .main.empty-chat .composer-shell {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      transform: translateY(-12%);
+      padding: 0 16px;
+      background: transparent;
+    }
+
+    .composer {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 42px;
+      grid-template-rows: auto 42px;
+      gap: 8px;
+      width: min(940px, 100%);
+      margin: 0 auto;
+      padding: 16px 18px 12px;
+      border: 1px solid #d2d2d2;
+      border-radius: 34px;
+      background: #ffffff;
+      box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.06), 0 8px 22px rgba(0, 0, 0, 0.08);
+    }
+
+    .composer textarea {
+      grid-column: 1 / -1;
+      width: 100%;
+      max-height: 220px;
+      min-height: 46px;
+      resize: none;
+      border: 0;
+      outline: 0;
+      padding: 0;
+      color: var(--text);
+      background: transparent;
+      line-height: 1.45;
+      font-size: 18px;
+    }
+
+    .send-btn {
+      display: grid;
+      place-items: center;
+      align-self: end;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: var(--button);
+      color: var(--button-text);
+    }
+
+    .composer-tools {
+      position: relative;
+      display: flex;
+      align-items: center;
+      align-self: end;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .add-btn,
+    .image-generate-btn,
+    .image-size-btn,
+    .thinking-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 36px;
+      border-radius: 999px;
+    }
+
+    .add-btn {
+      width: 36px;
+      color: #111111;
+      font-size: 30px;
+      line-height: 1;
+    }
+
+    .image-generate-btn {
+      gap: 8px;
+      padding: 0 10px;
+      color: #111111;
+      font-size: 16px;
+      font-weight: 520;
+      white-space: nowrap;
+    }
+
+    .image-generate-btn.active {
+      color: #0574ff;
+    }
+
+    .image-generate-btn .icon {
+      width: 22px;
+      height: 22px;
+    }
+
+    .image-size-btn {
+      display: none;
+      gap: 8px;
+      padding: 0 10px;
+      color: #202020;
+      font-size: 16px;
+      font-weight: 520;
+      white-space: nowrap;
+    }
+
+    .image-size-btn .chevron {
+      width: 16px;
+      height: 16px;
+    }
+
+    .image-size-btn.visible {
+      display: inline-flex;
+    }
+
+    .add-btn:hover,
+    .image-generate-btn:hover,
+    .image-size-btn:hover,
+    .thinking-btn:hover {
+      background: #f1f1f1;
+    }
+
+    .attach-menu {
+      position: absolute;
+      left: 0;
+      bottom: 42px;
+      z-index: 8;
+      display: none;
+      min-width: 168px;
+      padding: 6px;
+      border: 1px solid #dfdfdf;
+      border-radius: 12px;
+      background: #ffffff;
+      box-shadow: 0 16px 38px rgba(0, 0, 0, 0.16);
+    }
+
+    .attach-menu.open {
+      display: grid;
+    }
+
+    .attach-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 38px;
+      padding: 0 10px;
+      border-radius: 8px;
+      color: #222222;
+      font-size: 14px;
+      text-align: left;
+    }
+
+    .attach-option:hover {
+      background: #f4f4f4;
+    }
+
+    .attachment-list {
+      grid-column: 1 / -1;
+      display: none;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding-bottom: 2px;
+    }
+
+    .attachment-list.has-items {
+      display: flex;
+    }
+
+    .attachment-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      max-width: 240px;
+      min-height: 48px;
+      padding: 6px 8px 6px 6px;
+      border: 1px solid #e3e3e3;
+      border-radius: 12px;
+      background: #f7f7f7;
+      color: #333333;
+      font-size: 12px;
+    }
+
+    .attachment-thumb {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      overflow: hidden;
+      flex: 0 0 auto;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #666666;
+      border: 1px solid #e6e6e6;
+    }
+
+    .attachment-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .attachment-thumb .icon {
+      width: 18px;
+      height: 18px;
+    }
+
+    .attachment-chip span {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .attachment-chip button {
+      display: grid;
+      place-items: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      color: #777777;
+    }
+
+    .attachment-chip button:hover {
+      background: #e5e5e5;
+      color: #111111;
+    }
+
+    .thinking-btn {
+      gap: 8px;
+      padding: 0 10px;
+      color: #0b84ff;
+      font-size: 15px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .thinking-btn .icon {
+      width: 19px;
+      height: 19px;
+    }
+
+    .mode-menu {
+      position: absolute;
+      left: 42px;
+      bottom: 42px;
+      z-index: 8;
+      display: none;
+      min-width: 172px;
+      padding: 6px;
+      border: 1px solid #dfdfdf;
+      border-radius: 12px;
+      background: #ffffff;
+      box-shadow: 0 16px 38px rgba(0, 0, 0, 0.16);
+    }
+
+    .mode-menu.open {
+      display: grid;
+    }
+
+    .mode-option {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-height: 36px;
+      padding: 0 10px;
+      border-radius: 8px;
+      color: #222222;
+      font-size: 14px;
+      text-align: left;
+    }
+
+    .mode-option:hover {
+      background: #f4f4f4;
+    }
+
+    .mode-option.active {
+      color: #0b84ff;
+      background: #eef6ff;
+    }
+
+    .image-size-menu {
+      position: absolute;
+      left: 154px;
+      bottom: 42px;
+      z-index: 8;
+      display: none;
+      min-width: 216px;
+      padding: 6px;
+      border: 1px solid #dfdfdf;
+      border-radius: 12px;
+      background: #ffffff;
+      box-shadow: 0 16px 38px rgba(0, 0, 0, 0.16);
+    }
+
+    .image-size-menu.open {
+      display: grid;
+    }
+
+    .image-size-menu-title {
+      padding: 2px 6px 5px;
+      color: #8a8a8a;
+      font-size: 12px;
+      line-height: 1.2;
+    }
+
+    .image-size-option {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 32px;
+      padding: 0 6px;
+      border-radius: 7px;
+      color: #222222;
+      font-size: 13px;
+      text-align: left;
+    }
+
+    .ratio-icon {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+      border: 2px solid #1f1f1f;
+      border-radius: 5px;
+    }
+
+    .ratio-icon.auto {
+      position: relative;
+      width: 18px;
+      height: 14px;
+      border-width: 2px;
+      border-radius: 3px;
+    }
+
+    .ratio-icon.auto::after {
+      content: "";
+      position: absolute;
+      right: 3px;
+      bottom: 3px;
+      width: 6px;
+      height: 3px;
+      border: 2px solid #1f1f1f;
+      border-radius: 2px;
+      background: #ffffff;
+    }
+
+    .ratio-icon.square {
+      width: 18px;
+      height: 18px;
+    }
+
+    .ratio-icon.portrait {
+      width: 16px;
+      height: 21px;
+    }
+
+    .ratio-icon.story {
+      width: 14px;
+      height: 23px;
+    }
+
+    .ratio-icon.landscape {
+      width: 22px;
+      height: 16px;
+    }
+
+    .ratio-icon.widescreen {
+      width: 25px;
+      height: 15px;
+    }
+
+    .ratio-name {
+      color: #111111;
+    }
+
+    .ratio-value {
+      color: #8a8a8a;
+    }
+
+    .image-size-option .check {
+      margin-left: auto;
+      color: #111111;
+      font-size: 15px;
+    }
+
+    .image-size-option:hover {
+      background: #f4f4f4;
+    }
+
+    .image-size-option.active {
+      color: #0b84ff;
+      background: #eef6ff;
+    }
+
+    .send-btn:disabled {
+      cursor: not-allowed;
+      background: #d7d7d7;
+      color: #808080;
+    }
+
+    .hint {
+      width: min(940px, 100%);
+      margin: 8px auto 0;
+      color: #858585;
+      text-align: center;
+      font-size: 12px;
+    }
+
+    .scroll-top-btn {
+      position: fixed;
+      right: 22px;
+      bottom: 98px;
+      z-index: 12;
+      display: none;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      border: 1px solid #dedede;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.9);
+      color: #333333;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      backdrop-filter: blur(8px);
+    }
+
+    .scroll-top-btn.show {
+      display: grid;
+    }
+
+    .scroll-top-btn:hover {
+      background: #ffffff;
+    }
+
+    .selection-ask-btn {
+      position: fixed;
+      z-index: 30;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      min-height: 46px;
+      padding: 0 18px;
+      border: 1px solid #d7d7d7;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.96);
+      color: #111111;
+      font-size: 18px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+      backdrop-filter: blur(8px);
+    }
+
+    .selection-ask-btn.show {
+      display: inline-flex;
+    }
+
+    .selection-ask-btn:hover {
+      background: #ffffff;
+    }
+
+    .selection-ask-btn .quote-mark {
+      font-size: 25px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      display: none;
+      place-items: center;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.38);
+      z-index: 20;
+    }
+
+    .modal-backdrop.open {
+      display: grid;
+    }
+
+    .image-viewer {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: none;
+      place-items: center;
+      padding: 28px;
+      background: rgba(0, 0, 0, 0.72);
+    }
+
+    .image-viewer.open {
+      display: grid;
+    }
+
+    .image-viewer img {
+      max-width: min(96vw, 1280px);
+      max-height: 88vh;
+      border-radius: var(--radius);
+      background: #ffffff;
+      box-shadow: var(--shadow);
+      object-fit: contain;
+    }
+
+    .image-viewer .icon-btn {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      background: rgba(255, 255, 255, 0.92);
+    }
+
+    .modal {
+      display: flex;
+      flex-direction: column;
+      width: min(760px, 100%);
+      max-height: calc(100vh - 24px);
+      max-height: calc(100dvh - 24px);
+      overflow: hidden;
+      border-radius: 12px;
+      background: #ffffff;
+      box-shadow: var(--shadow);
+    }
+
+    .modal-head {
+      display: flex;
+      flex: 0 0 auto;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--soft);
+    }
+
+    .modal-head h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 650;
+    }
+
+    .modal-body {
+      display: grid;
+      gap: 18px;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 18px;
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    .field label {
+      color: #2d2d2d;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .field input,
+    .field textarea,
+    .field select {
+      width: 100%;
+      border: 1px solid #d9d9d9;
+      border-radius: var(--radius);
+      outline: 0;
+      background: #ffffff;
+      color: var(--text);
+      padding: 10px 11px;
+      font-size: 14px;
+    }
+
+    .field textarea {
+      min-height: 118px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    .field input:focus,
+    .field textarea:focus,
+    .field select:focus {
+      border-color: #9a9a9a;
+      box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
+    }
+
+    .range-row {
+      display: grid;
+      grid-template-columns: 1fr 70px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .modal-actions {
+      display: flex;
+      flex: 0 0 auto;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 14px 18px;
+      border-top: 1px solid var(--soft);
+    }
+
+    .settings-file-actions,
+    .right-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .primary-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 15px;
+      background: var(--button);
+      color: var(--button-text);
+      font-weight: 600;
+    }
+
+    .primary-btn:hover {
+      background: #333333;
+    }
+
+    .import-input {
+      display: none;
+    }
+
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      max-width: min(420px, calc(100vw - 36px));
+      padding: 12px 14px;
+      border-radius: var(--radius);
+      background: #111111;
+      color: #ffffff;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      z-index: 30;
+      font-size: 14px;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    body.sidebar-open .sidebar {
+      transform: translateX(0);
+    }
+
+    @media (max-width: 760px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .app.sidebar-collapsed {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        z-index: 15;
+        width: min(var(--sidebar-width), 86vw);
+        transform: translateX(-100%);
+        transition: transform 0.18s ease;
+        box-shadow: var(--shadow);
+      }
+
+      .app.sidebar-collapsed .sidebar {
+        transform: translateX(-100%);
+        border-right-color: var(--sidebar-border);
+      }
+
+      body.sidebar-open .app.sidebar-collapsed .sidebar,
+      body.sidebar-open .sidebar {
+        transform: translateX(0);
+      }
+
+      .topbar {
+        padding-left: 10px;
+      }
+
+      .model-pill {
+        display: none;
+      }
+
+      .quick-grid,
+      .field-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .message-row {
+        padding-left: 12px;
+        padding-right: 12px;
+      }
+
+      .message-inner {
+        width: 100%;
+      }
+
+      .message-row.user .bubble {
+        max-width: 92%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="会话侧边栏">
+      <div class="side-top">
+        <div class="brand-mark" aria-label="童博GPT">
+          <img src="chatgpt-icon.jpg" alt="童博GPT" />
+        </div>
+      </div>
+      <div class="side-tools">
+        <button class="tool-btn" id="newChatBtn" title="新建会话">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          <span>New chat</span>
+        </button>
+        <button class="tool-btn" id="searchChatsBtn" title="搜索会话">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <span>Search chats</span>
+        </button>
+      </div>
+      <div class="side-search">
+        <input id="sessionSearch" type="search" placeholder="搜索会话和消息" autocomplete="off" />
+      </div>
+      <div class="side-section-label">Recents</div>
+      <div class="sessions" id="sessionList"></div>
+      <div class="side-actions">
+        <button class="small-btn" id="exportJsonBtn" title="导出 JSON">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+          JSON
+        </button>
+        <button class="small-btn" id="importBtn" title="导入 JSON">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+          导入
+        </button>
+        <button class="small-btn" id="exportTxtBtn" title="导出 TXT">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+          TXT
+        </button>
+      </div>
+      <input class="import-input" id="importFile" type="file" accept="application/json,.json" />
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="title-wrap">
+          <button class="icon-btn mobile-menu" id="mobileMenuBtn" title="收起或打开侧边栏">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+          <div class="app-title" id="currentTitle">ChatGPT</div>
+          <div class="model-pill" id="modelPill" hidden></div>
+        </div>
+        <button class="small-btn" id="settingsBtn" title="API 与对话设置">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.6a1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15.4 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.2.37.58.6 1 .6H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1.4z"/></svg>
+          设置
+        </button>
+      </header>
+
+      <section class="messages" id="messages" aria-live="polite"></section>
+
+      <footer class="composer-shell">
+        <form class="composer" id="chatForm">
+          <div class="attachment-list" id="attachmentList"></div>
+          <textarea id="promptInput" rows="1" placeholder="Ask anything"></textarea>
+          <div class="composer-tools">
+            <button class="add-btn" id="addAttachmentBtn" type="button" title="上传文件或图片">+</button>
+            <div class="attach-menu" id="attachMenu">
+              <button class="attach-option" id="uploadFileBtn" type="button">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+                上传文件
+              </button>
+              <button class="attach-option" id="uploadImageBtn" type="button">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                上传图片
+              </button>
+            </div>
+            <button class="image-generate-btn" id="generateImageBtn" type="button" title="用 gpt-image-2 生成图片">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.7"/><path d="m20 15-4.5-4.5L5 20"/></svg>
+              <span>Image</span>
+            </button>
+            <button class="image-size-btn" id="imageSizeBtn" type="button" aria-haspopup="true" aria-expanded="false" title="选择图片比例">
+              <span id="imageSizeLabel">Auto</span>
+              <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="image-size-menu" id="imageSizeMenu" role="menu">
+              <div class="image-size-menu-title">Choose image aspect ratio</div>
+              <button class="image-size-option active" type="button" data-size="auto" role="menuitem"><span class="ratio-icon auto"></span><span class="ratio-name">Auto</span><span class="check">✓</span></button>
+              <button class="image-size-option" type="button" data-size="square" role="menuitem"><span class="ratio-icon square"></span><span class="ratio-name">Square</span><span class="ratio-value">1:1</span><span class="check"></span></button>
+              <button class="image-size-option" type="button" data-size="portrait" role="menuitem"><span class="ratio-icon portrait"></span><span class="ratio-name">Portrait</span><span class="ratio-value">3:4</span><span class="check"></span></button>
+              <button class="image-size-option" type="button" data-size="story" role="menuitem"><span class="ratio-icon story"></span><span class="ratio-name">Story</span><span class="ratio-value">9:16</span><span class="check"></span></button>
+              <button class="image-size-option" type="button" data-size="landscape" role="menuitem"><span class="ratio-icon landscape"></span><span class="ratio-name">Landscape</span><span class="ratio-value">4:3</span><span class="check"></span></button>
+              <button class="image-size-option" type="button" data-size="widescreen" role="menuitem"><span class="ratio-icon widescreen"></span><span class="ratio-name">Widescreen</span><span class="ratio-value">16:9</span><span class="check"></span></button>
+            </div>
+            <button class="thinking-btn" id="thinkingModeBtn" type="button" aria-haspopup="true" aria-expanded="false">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9"/><path d="M12 7v5l3 3"/></svg>
+              <span id="thinkingModeLabel">Thinking</span>
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="mode-menu" id="thinkingModeMenu" role="menu">
+              <button class="mode-option active" type="button" data-mode="standard" role="menuitem">标准思考<span>✓</span></button>
+              <button class="mode-option" type="button" data-mode="deep" role="menuitem">深度思考<span></span></button>
+            </div>
+          </div>
+          <button class="send-btn" id="sendBtn" type="submit" title="发送">
+            <svg class="icon" id="sendIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
+          </button>
+        </form>
+        <input class="import-input" id="fileAttachmentInput" type="file" multiple />
+        <input class="import-input" id="imageAttachmentInput" type="file" accept="image/*" multiple />
+        <div class="hint">聊天记录保存在当前浏览器。换浏览器或换电脑前，请先导出 JSON。</div>
+      </footer>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="modal">
+      <div class="modal-head">
+        <h2 id="settingsTitle">设置</h2>
+        <button class="icon-btn" id="closeSettingsBtn" title="关闭">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="field-grid">
+          <div class="field">
+            <label for="providerPreset">接口预设</label>
+            <select id="providerPreset">
+              <option value="openai">OpenAI</option>
+              <option value="compatible">OpenAI 兼容</option>
+              <option value="proxy">兼容接口代理</option>
+              <option value="local">本地服务</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="apiPath">接口路径</label>
+            <input id="apiPath" placeholder="/v1/chat/completions" />
+          </div>
+          <div class="field full">
+            <label for="baseUrl">Base URL</label>
+            <input id="baseUrl" placeholder="https://api.openai.com" />
+          </div>
+          <div class="field">
+            <label for="apiKey">API Key</label>
+            <input id="apiKey" type="password" autocomplete="off" placeholder="sk-..." />
+          </div>
+          <div class="field">
+            <label for="modelName">模型</label>
+            <input id="modelName" placeholder="gpt-4o-mini 或兼容模型名" />
+          </div>
+          <div class="field full">
+            <label for="systemPrompt">System Prompt</label>
+            <textarea id="systemPrompt" placeholder="你是一个有帮助的 AI 助手。"></textarea>
+          </div>
+          <div class="field">
+            <label for="temperature">Temperature</label>
+            <div class="range-row">
+              <input id="temperature" type="range" min="0" max="2" step="0.1" />
+              <input id="temperatureValue" type="number" min="0" max="2" step="0.1" />
+            </div>
+          </div>
+          <div class="field">
+            <label for="maxTokens">Max Tokens</label>
+            <input id="maxTokens" type="number" min="1" step="1" placeholder="留空则不限制" />
+          </div>
+          <div class="field full">
+            <label for="imageBaseUrl">Image Base URL</label>
+            <input id="imageBaseUrl" placeholder="图片 API 的独立 Base URL" />
+          </div>
+          <div class="field">
+            <label for="imageApiPath">Image API Path</label>
+            <input id="imageApiPath" placeholder="/v1/images/generations" />
+          </div>
+          <div class="field">
+            <label for="imageModel">Image Model</label>
+            <input id="imageModel" placeholder="gpt-image-2" />
+          </div>
+          <div class="field">
+            <label for="imageApiKey">Image API Key</label>
+            <input id="imageApiKey" type="password" autocomplete="off" placeholder="独立图片源 API Key" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <div class="settings-file-actions">
+          <button class="ghost-btn" id="exportSettingsBtn" type="button">导出设置</button>
+          <button class="ghost-btn" id="importSettingsBtn" type="button">导入设置</button>
+          <button class="ghost-btn" id="clearAllBtn" type="button">清空所有会话</button>
+        </div>
+        <div class="right-actions">
+          <button class="ghost-btn" id="cancelSettingsBtn" type="button">取消</button>
+          <button class="primary-btn" id="saveSettingsBtn" type="button">保存</button>
+        </div>
+      </div>
+      <input class="import-input" id="settingsImportFile" type="file" accept="application/json,.json" />
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <button class="scroll-top-btn" id="scrollTopBtn" type="button" title="回到顶部" aria-label="回到顶部">
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
+  </button>
+
+  <button class="selection-ask-btn" id="selectionAskBtn" type="button">
+    <span class="quote-mark">”</span>
+    <span>Ask ChatGPT</span>
+  </button>
+
+  <div class="image-viewer" id="imageViewer" role="dialog" aria-modal="true" aria-label="图片预览">
+    <button class="icon-btn" id="closeImageViewerBtn" type="button" title="关闭">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+    <img id="imageViewerImg" alt="图片预览" />
+  </div>
+
+  <script>
+    const STORAGE_KEY = "ai-chat-client-state-v1";
+    const IMAGE_DB_NAME = "ai-chat-client-images";
+    const IMAGE_DB_STORE = "images";
+    const EMBEDDED_API_KEY = "";
+    const STANDARD_DEVELOPER_PROMPT = `
+你是一个准确、简洁的AI助手。优先直接回答用户问题，避免不必要展开。对于简单问题，给出明确结论和必要解释。对于信息不足的问题，在合理假设下继续回答，并简要说明假设。不要输出隐藏思维链，不要展示完整内部推理过程。涉及代码、命令或配置时，必须使用 Markdown 围栏代码块并标注合适语言。输出应简洁、清楚、可执行。
+`.trim();
+
+    const DEEP_DEVELOPER_PROMPT = `
+你是一个严谨、系统化的AI助手。对复杂问题先进行充分的内部分析、拆解和校验，但不要向用户输出隐藏思维链或完整内部推理过程。最终回答应包含清晰结论、关键依据、必要步骤、边界条件、风险和不确定性。对于技术问题，优先按“现象→原因→验证方法→解决建议”的结构回答。对于代码问题，优先给出可运行实现和关键解释，并必须使用 Markdown 围栏代码块标注合适语言。对于架构、论文、方案类问题，输出结构化、可复用、可执行的内容。
+`.trim();
+
+    const MODE_CONFIG = {
+      standard: {
+        reasoningEffort: "low",
+        developerPrompt: STANDARD_DEVELOPER_PROMPT,
+        label: "标准思考"
+      },
+      deep: {
+        reasoningEffort: "high",
+        developerPrompt: DEEP_DEVELOPER_PROMPT,
+        label: "深度思考"
+      }
+    };
+
+    const IMAGE_SIZE_OPTIONS = {
+      auto: "Auto",
+      square: "Square 1:1",
+      portrait: "Portrait 3:4",
+      story: "Story 9:16",
+      landscape: "Landscape 4:3",
+      widescreen: "Widescreen 16:9"
+    };
+
+    const IMAGE_SIZE_API_VALUES = {
+      square: "1024x1024",
+      portrait: "1024x1365",
+      story: "1024x1792",
+      landscape: "1365x1024",
+      widescreen: "1792x1024"
+    };
+
+    const DEFAULT_SETTINGS = {
+      providerPreset: "compatible",
+      baseUrl: "",
+      apiPath: "/v1/chat/completions",
+      apiKey: "",
+      model: "gpt-4o-mini",
+      imageBaseUrl: "",
+      imageApiPath: "/v1/images/generations",
+      imageApiKey: "",
+      imageModel: "gpt-image-2",
+      imageSize: "auto",
+      systemPrompt: "你是一个有帮助、准确、简洁的 AI 助手。",
+      temperature: 0.7,
+      maxTokens: "",
+      thinkingMode: "standard"
+    };
+
+    function isLocalProxyOrigin() {
+      return ["127.0.0.1", "localhost"].includes(window.location.hostname)
+        && /^https?:$/.test(window.location.protocol);
+    }
+
+    function getDefaultSettings() {
+      const settings = { ...DEFAULT_SETTINGS };
+      if (isLocalProxyOrigin()) {
+        settings.providerPreset = "proxy";
+        settings.baseUrl = window.location.origin;
+        settings.apiPath = "/v1/chat/completions";
+        settings.model = "gpt-5.5";
+        settings.imageBaseUrl = window.location.origin;
+        settings.imageApiPath = "/api/image/generations";
+        settings.imageModel = "gpt-image-2";
+      }
+      return settings;
+    }
+
+    function fillLocalProxySettings(settings) {
+      if (!isLocalProxyOrigin()) return settings;
+      const origin = window.location.origin;
+      if (!settings.baseUrl) settings.baseUrl = origin;
+      if (!settings.apiPath) settings.apiPath = "/v1/chat/completions";
+      if (!settings.model || settings.model === DEFAULT_SETTINGS.model) settings.model = "gpt-5.5";
+      if (!settings.imageBaseUrl) settings.imageBaseUrl = origin;
+      if (!settings.imageApiPath || settings.imageApiPath === DEFAULT_SETTINGS.imageApiPath) {
+        settings.imageApiPath = "/api/image/generations";
+      }
+      if (!settings.imageModel) settings.imageModel = "gpt-image-2";
+      if (settings.providerPreset === "compatible") settings.providerPreset = "proxy";
+      return settings;
+    }
+
+    const els = {
+      app: document.querySelector(".app"),
+      sidebar: document.querySelector(".sidebar"),
+      sessionList: document.getElementById("sessionList"),
+      messages: document.getElementById("messages"),
+      newChatBtn: document.getElementById("newChatBtn"),
+      searchChatsBtn: document.getElementById("searchChatsBtn"),
+      exportJsonBtn: document.getElementById("exportJsonBtn"),
+      exportTxtBtn: document.getElementById("exportTxtBtn"),
+      importBtn: document.getElementById("importBtn"),
+      importFile: document.getElementById("importFile"),
+      sessionSearch: document.getElementById("sessionSearch"),
+      currentTitle: document.getElementById("currentTitle"),
+      modelPill: document.getElementById("modelPill"),
+      settingsBtn: document.getElementById("settingsBtn"),
+      mobileMenuBtn: document.getElementById("mobileMenuBtn"),
+      settingsModal: document.getElementById("settingsModal"),
+      closeSettingsBtn: document.getElementById("closeSettingsBtn"),
+      cancelSettingsBtn: document.getElementById("cancelSettingsBtn"),
+      saveSettingsBtn: document.getElementById("saveSettingsBtn"),
+      exportSettingsBtn: document.getElementById("exportSettingsBtn"),
+      importSettingsBtn: document.getElementById("importSettingsBtn"),
+      settingsImportFile: document.getElementById("settingsImportFile"),
+      clearAllBtn: document.getElementById("clearAllBtn"),
+      chatForm: document.getElementById("chatForm"),
+      promptInput: document.getElementById("promptInput"),
+      addAttachmentBtn: document.getElementById("addAttachmentBtn"),
+      generateImageBtn: document.getElementById("generateImageBtn"),
+      imageSizeBtn: document.getElementById("imageSizeBtn"),
+      imageSizeLabel: document.getElementById("imageSizeLabel"),
+      imageSizeMenu: document.getElementById("imageSizeMenu"),
+      attachMenu: document.getElementById("attachMenu"),
+      uploadFileBtn: document.getElementById("uploadFileBtn"),
+      uploadImageBtn: document.getElementById("uploadImageBtn"),
+      fileAttachmentInput: document.getElementById("fileAttachmentInput"),
+      imageAttachmentInput: document.getElementById("imageAttachmentInput"),
+      attachmentList: document.getElementById("attachmentList"),
+      sendBtn: document.getElementById("sendBtn"),
+      sendIcon: document.getElementById("sendIcon"),
+      thinkingModeBtn: document.getElementById("thinkingModeBtn"),
+      thinkingModeLabel: document.getElementById("thinkingModeLabel"),
+      thinkingModeMenu: document.getElementById("thinkingModeMenu"),
+      providerPreset: document.getElementById("providerPreset"),
+      baseUrl: document.getElementById("baseUrl"),
+      apiPath: document.getElementById("apiPath"),
+      apiKey: document.getElementById("apiKey"),
+      modelName: document.getElementById("modelName"),
+      imageBaseUrl: document.getElementById("imageBaseUrl"),
+      imageApiPath: document.getElementById("imageApiPath"),
+      imageApiKey: document.getElementById("imageApiKey"),
+      imageModel: document.getElementById("imageModel"),
+      imageViewer: document.getElementById("imageViewer"),
+      imageViewerImg: document.getElementById("imageViewerImg"),
+      closeImageViewerBtn: document.getElementById("closeImageViewerBtn"),
+      systemPrompt: document.getElementById("systemPrompt"),
+      temperature: document.getElementById("temperature"),
+      temperatureValue: document.getElementById("temperatureValue"),
+      maxTokens: document.getElementById("maxTokens"),
+      toast: document.getElementById("toast"),
+      scrollTopBtn: document.getElementById("scrollTopBtn"),
+      selectionAskBtn: document.getElementById("selectionAskBtn")
+    };
+
+    let state = loadState();
+    let sidebarCollapsed = localStorage.getItem("ai-chat-sidebar-collapsed") === "true";
+    const activeRequests = new Map();
+    const assistantRenderQueue = new Map();
+    let pendingAttachments = [];
+    let imageControlsVisible = false;
+    let imageModeActive = false;
+    let thinkingTimer = null;
+    let scrollFrame = null;
+    let renderMessagesToken = 0;
+
+    function uid() {
+      if (crypto && crypto.randomUUID) return crypto.randomUUID();
+      return "id-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2);
+    }
+
+    function nowIso() {
+      return new Date().toISOString();
+    }
+
+    function createSession(title = "新聊天") {
+      const time = nowIso();
+      return { id: uid(), title, messages: [], memorySummary: "", createdAt: time, updatedAt: time };
+    }
+
+    function loadState() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+        if (parsed && Array.isArray(parsed.sessions)) {
+          const sessions = parsed.sessions.map(normalizeSession).filter(Boolean);
+          if (sessions.length) {
+            const settings = fillLocalProxySettings({ ...getDefaultSettings(), ...(parsed.settings || {}) });
+            settings.apiKey = settings.apiKey || EMBEDDED_API_KEY;
+            return {
+              settings,
+              sessions,
+              currentSessionId: sessions.some(s => s.id === parsed.currentSessionId)
+                ? parsed.currentSessionId
+                : sessions[0].id
+            };
+          }
+        }
+      } catch (error) {
+        console.warn(error);
+      }
+      const first = createSession();
+      return {
+        settings: { ...getDefaultSettings(), apiKey: EMBEDDED_API_KEY },
+        sessions: [first],
+        currentSessionId: first.id
+      };
+    }
+
+    function normalizeSession(input) {
+      if (!input || typeof input !== "object") return null;
+      const id = String(input.id || uid());
+      const messages = Array.isArray(input.messages)
+        ? input.messages
+            .filter(m => m && ["user", "assistant", "system"].includes(m.role))
+            .map(m => ({
+              id: String(m.id || uid()),
+              role: m.role,
+              content: String(m.content || ""),
+              attachments: Array.isArray(m.attachments) ? m.attachments : [],
+              createdAt: String(m.createdAt || nowIso()),
+              textGenerating: false,
+              thinkingStartedAt: Number(m.thinkingStartedAt || 0),
+              thinkingFinishedAt: Number(m.thinkingFinishedAt || 0),
+              thinkingElapsedMs: Number(m.thinkingElapsedMs || 0),
+              imageGenerating: Boolean(m.imageGenerating),
+              imageStartedAt: Number(m.imageStartedAt || 0),
+              imageFinishedAt: Number(m.imageFinishedAt || 0),
+              imageElapsedMs: Number(m.imageElapsedMs || 0)
+            }))
+        : [];
+      return {
+        id,
+        title: String(input.title || titleFromMessages(messages) || "新聊天"),
+        messages,
+        memorySummary: String(input.memorySummary || ""),
+        createdAt: String(input.createdAt || nowIso()),
+        updatedAt: String(input.updatedAt || input.createdAt || nowIso())
+      };
+    }
+
+    function saveState() {
+      const persistedSessions = state.sessions.filter(session => session.messages.length > 0);
+      const snapshot = {
+        ...state,
+        sessions: persistedSessions.map(prepareSessionForStorage),
+        currentSessionId: persistedSessions.some(s => s.id === state.currentSessionId)
+          ? state.currentSessionId
+          : (persistedSessions[0]?.id || null)
+      };
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+      } catch (error) {
+        try {
+          const lightSnapshot = {
+            ...snapshot,
+            sessions: snapshot.sessions.map(stripLargeImageDataFromSession)
+          };
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(lightSnapshot));
+        } catch (fallbackError) {
+          console.warn("无法保存聊天历史", fallbackError);
+        }
+      }
+    }
+
+    function prepareSessionForStorage(session) {
+      return {
+        ...session,
+        messages: session.messages.map(message => ({
+          ...message,
+          imageGenerating: false,
+          textGenerating: false,
+          displayContent: undefined
+        }))
+      };
+    }
+
+    function stripLargeImageDataFromSession(session) {
+      return {
+        ...session,
+        messages: session.messages.map(message => ({
+          ...message,
+          attachments: (message.attachments || []).map(attachment => {
+            if (attachment.kind !== "image" || !attachment.dataUrl || attachment.dataUrl.length < 200000) {
+              return attachment;
+            }
+            return {
+              ...attachment,
+              dataUrl: ""
+            };
+          })
+        }))
+      };
+    }
+
+    function openImageDb() {
+      return new Promise((resolve, reject) => {
+        if (!("indexedDB" in window)) {
+          reject(new Error("IndexedDB is not available"));
+          return;
+        }
+        const request = indexedDB.open(IMAGE_DB_NAME, 1);
+        request.onupgradeneeded = () => {
+          request.result.createObjectStore(IMAGE_DB_STORE);
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    async function putStoredImage(key, dataUrl) {
+      if (!key || !dataUrl) return;
+      const db = await openImageDb();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(IMAGE_DB_STORE, "readwrite");
+        tx.objectStore(IMAGE_DB_STORE).put(dataUrl, key);
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+      });
+      db.close();
+    }
+
+    async function getStoredImage(key) {
+      if (!key) return "";
+      const db = await openImageDb();
+      const value = await new Promise((resolve, reject) => {
+        const tx = db.transaction(IMAGE_DB_STORE, "readonly");
+        const request = tx.objectStore(IMAGE_DB_STORE).get(key);
+        request.onsuccess = () => resolve(request.result || "");
+        request.onerror = () => reject(request.error);
+      });
+      db.close();
+      return value;
+    }
+
+    async function persistImageAttachment(attachment) {
+      if (!attachment || attachment.kind !== "image" || !attachment.dataUrl) return attachment;
+      attachment.storageKey = attachment.storageKey || uid();
+      try {
+        await putStoredImage(attachment.storageKey, attachment.dataUrl);
+      } catch (error) {
+        console.warn("鏃犳硶淇濆瓨鍥剧墖鍒?IndexedDB", error);
+      }
+      return attachment;
+    }
+
+    async function hydrateStoredImages() {
+      let changed = false;
+      for (const session of state.sessions) {
+        for (const message of session.messages || []) {
+          for (const attachment of message.attachments || []) {
+            if (attachment.kind === "image" && attachment.storageKey && !attachment.dataUrl) {
+              try {
+                const dataUrl = await getStoredImage(attachment.storageKey);
+                if (dataUrl) {
+                  attachment.dataUrl = dataUrl;
+                  changed = true;
+                }
+              } catch (error) {
+                console.warn("鏃犳硶璇诲彇鍘嗗彶鍥剧墖", error);
+              }
+            }
+          }
+        }
+      }
+      if (changed) renderAll();
+    }
+
+    function currentSession() {
+      let session = state.sessions.find(s => s.id === state.currentSessionId);
+      if (!session) {
+        session = createSession();
+        state.sessions.unshift(session);
+        state.currentSessionId = session.id;
+      }
+      return session;
+    }
+
+    function titleFromMessages(messages) {
+      const firstUser = messages.find(m => m.role === "user");
+      if (!firstUser) return "";
+      return firstUser.content.trim().replace(/\s+/g, " ").slice(0, 32) || "新聊天";
+    }
+
+    function renderAll() {
+      renderSessions();
+      renderMessages();
+      updateHeader();
+      updateSendButton();
+      updateImageSizeButtons();
+      updateEmptyChatLayout();
+    }
+
+    function updateEmptyChatLayout() {
+      const session = currentSession();
+      document.querySelector(".main").classList.toggle("empty-chat", !session || session.messages.length === 0);
+    }
+
+    function renderSessions() {
+      els.sessionList.innerHTML = "";
+      const query = (els.sessionSearch?.value || "").trim().toLowerCase();
+      const visibleSessions = state.sessions.filter(session => session.messages.length > 0);
+      const ordered = [...visibleSessions].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+      const filtered = query
+        ? ordered.filter(session => sessionMatchesQuery(session, query))
+        : ordered;
+      if (filtered.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "empty-sessions";
+        empty.textContent = query ? "没有找到匹配的会话" : "暂无历史会话";
+        els.sessionList.append(empty);
+        return;
+      }
+      filtered.forEach(session => {
+        const row = document.createElement("div");
+        row.className = [
+          "session",
+          session.id === state.currentSessionId ? "active" : "",
+          isSessionGenerating(session.id) ? "generating" : ""
+        ].filter(Boolean).join(" ");
+        row.title = session.title;
+        row.dataset.id = session.id;
+
+        const title = document.createElement("button");
+        title.className = "session-title";
+        title.textContent = session.title || "新聊天";
+        title.addEventListener("click", () => switchSession(session.id));
+
+        const rename = document.createElement("button");
+        rename.className = "rename-session";
+        rename.title = "重命名会话";
+        rename.innerHTML = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+        rename.addEventListener("click", event => {
+          event.stopPropagation();
+          startRenameSession(row, session);
+        });
+
+        const del = document.createElement("button");
+        del.className = "delete-session";
+        del.title = "删除会话";
+        del.innerHTML = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>';
+        del.addEventListener("click", event => {
+          event.stopPropagation();
+          showDeleteConfirm(row, session);
+        });
+
+        row.append(title, rename, del);
+        els.sessionList.append(row);
+      });
+    }
+
+    function startRenameSession(row, session) {
+      els.sessionList.querySelectorAll(".delete-confirm").forEach(node => node.remove());
+      const existingTitle = row.querySelector(".session-title");
+      if (!existingTitle) return;
+      const input = document.createElement("input");
+      input.className = "rename-input";
+      input.value = session.title || "新聊天";
+      existingTitle.replaceWith(input);
+      input.focus();
+      input.select();
+
+      const commit = () => {
+        const nextTitle = input.value.trim();
+        if (nextTitle) {
+          session.title = nextTitle.slice(0, 80);
+          session.updatedAt = nowIso();
+          saveState();
+        }
+        renderSessions();
+        updateHeader();
+      };
+
+      input.addEventListener("keydown", event => {
+        if (event.key === "Enter") commit();
+        if (event.key === "Escape") renderSessions();
+      });
+      input.addEventListener("blur", commit, { once: true });
+    }
+
+    function showDeleteConfirm(row, session) {
+      els.sessionList.querySelectorAll(".delete-confirm").forEach(node => node.remove());
+      const popover = document.createElement("div");
+      popover.className = "delete-confirm";
+      popover.innerHTML = `
+        <div class="delete-confirm-text">删除这个对话？</div>
+        <div class="delete-confirm-actions">
+          <button class="delete-cancel" type="button">取消</button>
+          <button class="delete-ok" type="button">删除</button>
+        </div>
+      `;
+      popover.querySelector(".delete-cancel").addEventListener("click", event => {
+        event.stopPropagation();
+        popover.remove();
+      });
+      popover.querySelector(".delete-ok").addEventListener("click", event => {
+        event.stopPropagation();
+        deleteSession(session.id);
+      });
+      row.append(popover);
+    }
+
+    function sessionMatchesQuery(session, query) {
+      const normalized = query.toLowerCase();
+      if (String(session.title || "").toLowerCase().includes(normalized)) return true;
+      if (formatDate(session.createdAt).toLowerCase().includes(normalized)) return true;
+      if (formatDate(session.updatedAt).toLowerCase().includes(normalized)) return true;
+      return session.messages.some(m => {
+        const content = normalizeMessageContent(m.content).slice(0, 2000).toLowerCase();
+        return `${m.role} ${content}`.includes(normalized);
+      });
+    }
+
+    function renderMessages() {
+      const token = ++renderMessagesToken;
+      clearAssistantRenderQueue();
+      const session = currentSession();
+      els.messages.innerHTML = "";
+      if (!session || session.messages.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.innerHTML = `<h1>What are you working on?</h1>`;
+        els.messages.append(empty);
+        return;
+      }
+
+      const messages = session.messages.slice();
+      let index = 0;
+      const renderBatch = () => {
+        if (token !== renderMessagesToken) return;
+        const limit = Math.min(index + 12, messages.length);
+        for (; index < limit; index += 1) {
+          appendMessageRow(messages[index], session.id);
+        }
+        if (index < messages.length) {
+          requestAnimationFrame(renderBatch);
+          return;
+        }
+        scrollToBottom();
+      };
+      renderBatch();
+    }
+
+    function appendMessageRow(message, sessionId) {
+        const row = document.createElement("article");
+        row.className = "message-row " + message.role;
+        const time = document.createElement("div");
+        time.className = "message-time";
+        time.textContent = `${message.role === "user" ? "我" : "AI"} · ${formatMessageTime(message.createdAt)}`;
+        const inner = document.createElement("div");
+        inner.className = "message-inner";
+        const bubble = document.createElement("div");
+        bubble.className = "bubble";
+        const visibleContent = getVisibleMessageContent(message);
+        setBubbleContent(bubble, visibleContent, shouldUsePlainMessageRender(message, sessionId, visibleContent));
+        const thinkingStatus = renderTextThinkingStatus(message, sessionId);
+        if (thinkingStatus && !normalizeMessageContent(visibleContent).trim()) {
+          bubble.classList.add("empty-bubble");
+        }
+        const copyButton = createMessageCopyButton(message);
+        const attachments = renderMessageAttachments(message.attachments || []);
+        const imageStatus = renderImageGenerationStatus(message, sessionId);
+        const imageGenerating = message.imageGenerating && isSessionGenerating(sessionId)
+          ? renderImageGeneratingVisual()
+          : null;
+        inner.append(bubble);
+        inner.append(copyButton);
+        if (thinkingStatus) inner.append(thinkingStatus);
+        if (imageGenerating) inner.append(imageGenerating);
+        if (imageStatus) inner.append(imageStatus);
+        if (attachments) inner.append(attachments);
+        row.append(time);
+        row.append(inner);
+        els.messages.append(row);
+    }
+
+    function clearAssistantRenderQueue() {
+      assistantRenderQueue.forEach(entry => {
+        if (entry.timer) window.clearTimeout(entry.timer);
+      });
+      assistantRenderQueue.clear();
+    }
+
+    function renderContent(value) {
+      const source = normalizeMessageContent(value).replace(/\r\n/g, "\n");
+      if (!source.trim()) return "";
+      if (source.length > 14000) return `<p>${escapeHtml(source).replace(/\n/g, "<br>")}</p>`;
+      return parseFencedMarkdown(source).flatMap(part => {
+        if (part.type === "text") return splitLooseCodeParts(part.text);
+        return [part];
+      }).map(part => {
+        if (part.type === "code") return renderCodeBlock(part.code, part.language);
+        return renderMarkdownBlocks(part.text);
+      }).join("");
+    }
+
+    function setBubbleContent(bubble, content, plain = false) {
+      const normalized = normalizeMessageContent(content);
+      if (plain) {
+        bubble.textContent = normalized;
+      } else {
+        bubble.innerHTML = renderContent(normalized);
+      }
+      bubble.classList.toggle("streaming-plain", plain);
+    }
+
+    function getVisibleMessageContent(message) {
+      return typeof message.displayContent === "string" ? message.displayContent : message.content;
+    }
+
+    function shouldUsePlainMessageRender(message, sessionId, visibleContent = message.content) {
+      const length = normalizeMessageContent(visibleContent).length;
+      if (length > 14000) return true;
+      return message.role === "assistant" && isSessionGenerating(sessionId) && length > 6000;
+    }
+
+    function createMessageCopyButton(message) {
+      const button = document.createElement("button");
+      button.className = "message-copy-btn";
+      button.type = "button";
+      button.dataset.messageId = message.id;
+      button.title = "复制整段";
+      button.innerHTML = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>复制</span>';
+      return button;
+    }
+
+    function renderMessageAttachments(attachments) {
+      if (!Array.isArray(attachments) || attachments.length === 0) return null;
+      const wrap = document.createElement("div");
+      wrap.className = "message-attachments";
+      attachments.forEach(attachment => {
+        const item = document.createElement("div");
+        item.className = "message-attachment " + (attachment.kind === "image" ? "image" : "file");
+        if (attachment.kind === "image" && attachment.dataUrl) {
+          const img = document.createElement("img");
+          img.src = attachment.dataUrl;
+          img.alt = attachment.name || "uploaded image";
+          item.append(createImagePreviewButton(img, attachment.dataUrl));
+          item.append(createImageDownloadButton(attachment.dataUrl, attachment.name));
+        } else if (attachment.kind === "image" && attachment.url) {
+          const img = document.createElement("img");
+          img.src = attachment.url;
+          img.alt = attachment.name || "generated image";
+          item.append(createImagePreviewButton(img, attachment.url));
+          item.append(createImageDownloadButton(attachment.url, attachment.name));
+        } else {
+          item.innerHTML = `<div class="attachment-thumb"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div><span>${escapeHtml(attachment.name || "文件")}</span>`;
+        }
+        wrap.append(item);
+      });
+      return wrap;
+    }
+
+    function renderImageGeneratingVisual() {
+      const visual = document.createElement("div");
+      visual.className = "image-generate-visual";
+      visual.setAttribute("aria-label", "正在生成图片");
+      visual.innerHTML = '<span class="image-generate-dot"></span><span class="image-generate-dot"></span><span class="image-generate-dot"></span>';
+      return visual;
+    }
+
+    function renderTextThinkingStatus(message, sessionId) {
+      if (message.role !== "assistant" || message.imageGenerating) return null;
+      const active = message.textGenerating && isSessionGenerating(sessionId);
+      const elapsedMs = active ? getThinkingElapsedMs(message) : Number(message.thinkingElapsedMs || 0);
+      if (!active && elapsedMs <= 0) return null;
+      const status = document.createElement("div");
+      status.className = "thinking-status " + (active ? "active" : "finished");
+      status.dataset.messageId = message.id;
+      status.dataset.startedAt = String(message.thinkingStartedAt || "");
+      status.innerHTML = active
+        ? `<span>思考中 · <span class="thinking-elapsed">${formatThinkingDuration(elapsedMs)}</span></span>`
+        : `<span>思考用时 ${formatThinkingDuration(elapsedMs)}</span>`;
+      return status;
+    }
+
+    function renderImageGenerationStatus(message, sessionId) {
+      if (message.role !== "assistant") return null;
+      const active = message.imageGenerating && isSessionGenerating(sessionId);
+      const elapsedMs = active ? getImageElapsedMs(message) : Number(message.imageElapsedMs || 0);
+      if (!active && elapsedMs <= 0) return null;
+      const status = document.createElement("div");
+      status.className = "thinking-status image-time-status " + (active ? "active" : "finished");
+      status.dataset.messageId = message.id;
+      status.dataset.timerKind = "image";
+      status.innerHTML = active
+        ? `<span>生成中 · <span class="thinking-elapsed">${formatThinkingDuration(elapsedMs)}</span></span>`
+        : `<span>用时 ${formatThinkingDuration(elapsedMs)}</span>`;
+      return status;
+    }
+
+    function createImagePreviewButton(img, src) {
+      const button = document.createElement("button");
+      button.className = "image-preview-btn";
+      button.type = "button";
+      button.title = "查看图片";
+      button.append(img);
+      button.addEventListener("click", () => openImageViewer(src));
+      return button;
+    }
+
+    function createImageDownloadButton(src, filename = "") {
+      const button = document.createElement("button");
+      button.className = "image-download-btn";
+      button.type = "button";
+      button.title = "下载图片";
+      button.innerHTML = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg><span>下载图片</span>';
+      button.addEventListener("click", event => {
+        event.stopPropagation();
+        downloadImage(src, filename || timestampImageFilename());
+      });
+      return button;
+    }
+
+    function parseFencedMarkdown(source) {
+      const lines = source.split("\n");
+      const parts = [];
+      let text = [];
+      let code = [];
+      let language = "";
+      let inFence = false;
+
+      for (const line of lines) {
+        const fence = line.match(/^\s*```+\s*([^`]*)$/);
+        if (fence) {
+          if (inFence) {
+            parts.push({ type: "code", language, code: code.join("\n") });
+            code = [];
+            language = "";
+            inFence = false;
+          } else {
+            if (text.length) {
+              parts.push({ type: "text", text: text.join("\n") });
+              text = [];
+            }
+            language = (fence[1] || "").trim();
+            inFence = true;
+          }
+          continue;
+        }
+
+        if (inFence) code.push(line);
+        else text.push(line);
+      }
+
+      if (inFence) parts.push({ type: "code", language, code: code.join("\n") });
+      if (text.length) parts.push({ type: "text", text: text.join("\n") });
+      return parts;
+    }
+
+    function splitLooseCodeParts(text) {
+      const lines = text.split("\n");
+      const parts = [];
+      let buffer = [];
+      let code = [];
+
+      const flushText = () => {
+        if (buffer.length) {
+          parts.push({ type: "text", text: buffer.join("\n") });
+          buffer = [];
+        }
+      };
+      const flushCode = () => {
+        if (code.length) {
+          parts.push({
+            type: "code",
+            language: inferCodeLanguage(code.join("\n")),
+            code: code.join("\n").replace(/^\n+|\n+$/g, "")
+          });
+          code = [];
+        }
+      };
+
+      lines.forEach((line, index) => {
+        const previous = lines[index - 1] || "";
+        const next = lines[index + 1] || "";
+        const codeLine = looksLikeLooseCodeLine(line);
+        const nearCode = looksLikeLooseCodeLine(previous) || looksLikeLooseCodeLine(next);
+        const startsSnippet = /[:：]\s*$/.test(previous.trim()) && codeLine;
+
+        if (codeLine && (nearCode || startsSnippet || /^\s{4,}\S/.test(line))) {
+          flushText();
+          code.push(line);
+          return;
+        }
+
+        if (code.length && !line.trim()) {
+          code.push(line);
+          return;
+        }
+
+        flushCode();
+        buffer.push(line);
+      });
+
+      flushCode();
+      flushText();
+      return parts;
+    }
+
+    function looksLikeLooseCodeLine(line) {
+      const value = line.trim();
+      if (!value) return false;
+      if (/^(#{1,3}|[-*+]\s|\d+[.)]\s|>\s|\|)/.test(value)) return false;
+      return /^\s{4,}\S/.test(line)
+        || /^(const|let|var|function|class|import|export|async|await|return|if|else|for|while|try|catch)\b/.test(value)
+        || /^(def|class|from|import|print|if|elif|else|for|while|try|except|return)\b/.test(value)
+        || /^(SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP)\b/i.test(value)
+        || /^(npm|pnpm|yarn|node|python|pip|git|curl|cd|mkdir|copy|dir|setx|powershell)\b/i.test(value)
+        || /^[$>]\s+\S/.test(value)
+        || /^<\/?[A-Za-z][^>]*>$/.test(value)
+        || /^[\w.#-]+\s*\{/.test(value)
+        || /^[}\])];,]+$/.test(value)
+        || /[{};]\s*$/.test(value)
+        || /^[\w$.[\]'"]+\s*[:=]\s*.+[,;]?$/.test(value);
+    }
+
+    function inferCodeLanguage(code) {
+      const value = code.trim();
+      if (/^<\/?[A-Za-z][^>]*>/m.test(value)) return "html";
+      if (/\b(const|let|function|=>|console\.log|document\.)\b/.test(value)) return "javascript";
+      if (/\b(def|print|self|elif|except)\b/.test(value)) return "python";
+      if (/\b(SELECT|INSERT|UPDATE|DELETE|CREATE)\b/i.test(value)) return "sql";
+      if (/^(npm|pnpm|yarn|node|python|pip|git|curl|cd|mkdir|copy|dir|setx|powershell)\b/im.test(value)) return "sh";
+      if (/^\s*[{[][\s\S]*[}\]]\s*$/.test(value)) return "json";
+      return "";
+    }
+
+    function renderCodeBlock(code, language) {
+      const lang = normalizeCodeLanguage(language);
+      const raw = stripOddControlChars(code || "").replace(/\n+$/, "");
+      const encoded = encodeURIComponent(raw);
+      return [
+        `<div class="code-block" data-code="${encoded}">`,
+        '<div class="code-head">',
+        `<div class="code-lang"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></svg><span>${escapeHtml(lang.label)}</span></div>`,
+        '<button class="code-copy" type="button" title="澶嶅埗浠ｇ爜"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>',
+        '</div>',
+        `<pre><code>${highlightCode(raw, lang.key)}</code></pre>`,
+        '</div>'
+      ].join("");
+    }
+
+    function normalizeCodeLanguage(language) {
+      const raw = String(language || "").trim();
+      const key = raw.toLowerCase();
+      const labels = {
+        js: "JavaScript",
+        javascript: "JavaScript",
+        ts: "TypeScript",
+        typescript: "TypeScript",
+        py: "Python",
+        python: "Python",
+        ps1: "PowerShell",
+        powershell: "PowerShell",
+        sh: "Shell",
+        bash: "Shell",
+        json: "JSON",
+        html: "HTML",
+        css: "CSS",
+        toml: "TOML",
+        sql: "SQL"
+      };
+      return { key, label: labels[key] || raw || "Code" };
+    }
+
+    function highlightCode(code, language) {
+      const placeholders = [];
+      let html = escapeHtml(code);
+      html = html.replace(/(&quot;.*?&quot;|&#039;.*?&#039;|`.*?`)/g, match => storeToken(placeholders, "string", match));
+      html = html.replace(/(#.*$|\/\/.*$|&lt;!--[\s\S]*?--&gt;)/gm, match => storeToken(placeholders, "comment", match));
+      html = html.replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="tok-number">$1</span>');
+      if (language === "powershell" || language === "ps1") {
+        html = html.replace(/(\$[A-Za-z_][\w:]*)/g, '<span class="tok-variable">$1</span>');
+        html = html.replace(/\b(setx|echo|cd|dir|copy|node|npm|codex|powershell)\b/gi, '<span class="tok-builtin">$1</span>');
+      } else {
+        html = html.replace(/\b(const|let|var|function|return|async|await|if|else|for|while|class|import|from|export|try|catch|new|true|false|null|undefined|def|print|in|and|or|not|with|as|SELECT|FROM|WHERE|INSERT|UPDATE|DELETE|CREATE|model|model_provider|base_url|env_key|wire_api|name)\b/g, '<span class="tok-keyword">$1</span>');
+      }
+      return restoreTokens(html, placeholders);
+    }
+
+    function storeToken(placeholders, type, value) {
+      const key = tokenKey(placeholders.length);
+      placeholders.push({ key, html: `<span class="tok-${type}">${value}</span>` });
+      return `@@TOKEN_${key}@@`;
+    }
+
+    function restoreTokens(html, placeholders) {
+      return placeholders.reduce((output, item) => output.replaceAll(`@@TOKEN_${item.key}@@`, item.html), html);
+    }
+
+    function tokenKey(index) {
+      const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      let n = index;
+      let key = "";
+      do {
+        key = alphabet[n % alphabet.length] + key;
+        n = Math.floor(n / alphabet.length) - 1;
+      } while (n >= 0);
+      return key;
+    }
+
+    function normalizeMessageContent(value) {
+      if (value == null) return "";
+      if (typeof value === "string") return stripOddControlChars(value);
+      if (Array.isArray(value)) return stripOddControlChars(value.map(normalizeMessageContent).join(""));
+      if (typeof value === "object") {
+        if (typeof value.text === "string") return stripOddControlChars(value.text);
+        if (typeof value.content === "string") return stripOddControlChars(value.content);
+        if (Array.isArray(value.content)) return normalizeMessageContent(value.content);
+        return stripOddControlChars(JSON.stringify(value, null, 2));
+      }
+      return stripOddControlChars(String(value));
+    }
+
+    function stripOddControlChars(value) {
+      return String(value).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "");
+    }
+
+    function renderMarkdownBlocks(markdown) {
+      const lines = markdown.split("\n");
+      const html = [];
+      let i = 0;
+      while (i < lines.length) {
+        const line = lines[i];
+        if (!line.trim()) {
+          i += 1;
+          continue;
+        }
+        const heading = line.match(/^(#{1,3})\s+(.+)$/);
+        if (heading) {
+          html.push(`<h${heading[1].length}>${renderInline(heading[2])}</h${heading[1].length}>`);
+          i += 1;
+          continue;
+        }
+        if (/^\s*---+\s*$/.test(line)) {
+          html.push("<hr>");
+          i += 1;
+          continue;
+        }
+        if (looksLikeTable(lines, i)) {
+          const rows = [];
+          rows.push(splitTableRow(lines[i]));
+          i += 2;
+          while (i < lines.length && lines[i].includes("|") && lines[i].trim()) {
+            rows.push(splitTableRow(lines[i]));
+            i += 1;
+          }
+          html.push(renderTable(rows));
+          continue;
+        }
+        if (/^\s*>\s?/.test(line)) {
+          const quote = [];
+          while (i < lines.length && /^\s*>\s?/.test(lines[i])) {
+            quote.push(lines[i].replace(/^\s*>\s?/, ""));
+            i += 1;
+          }
+          html.push(`<blockquote>${renderMarkdownBlocks(quote.join("\n"))}</blockquote>`);
+          continue;
+        }
+        const listMatch = line.match(/^\s*((?:[-*+])|(?:\d+[.)]))\s+(.+)$/);
+        if (listMatch) {
+          const ordered = /\d/.test(listMatch[1]);
+          const tag = ordered ? "ol" : "ul";
+          const items = [];
+          while (i < lines.length) {
+            const item = lines[i].match(/^\s*((?:[-*+])|(?:\d+[.)]))\s+(.+)$/);
+            if (!item || /\d/.test(item[1]) !== ordered) break;
+            items.push(`<li>${renderInline(item[2])}</li>`);
+            i += 1;
+          }
+          html.push(`<${tag}>${items.join("")}</${tag}>`);
+          continue;
+        }
+        const paragraph = [];
+        while (i < lines.length && lines[i].trim() && !isBlockStart(lines, i)) {
+          paragraph.push(lines[i]);
+          i += 1;
+        }
+        html.push(`<p>${renderInline(paragraph.join("\n")).replace(/\n/g, "<br>")}</p>`);
+      }
+      return html.join("");
+    }
+
+    function isBlockStart(lines, index) {
+      const line = lines[index];
+      return /^(#{1,3})\s+/.test(line)
+        || /^\s*---+\s*$/.test(line)
+        || /^\s*>\s?/.test(line)
+        || /^\s*((?:[-*+])|(?:\d+[.)]))\s+/.test(line)
+        || looksLikeTable(lines, index);
+    }
+
+    function renderInline(text) {
+      let html = escapeHtml(text);
+      html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
+      html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>');
+      html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+      html = html.replace(/__([^_]+)__/g, "<strong>$1</strong>");
+      html = html.replace(/(^|[\s(])\*([^*\n]+)\*/g, "$1<em>$2</em>");
+      return html;
+    }
+
+    function looksLikeTable(lines, index) {
+      return Boolean(lines[index] && lines[index].includes("|") && isTableSeparator(lines[index + 1] || ""));
+    }
+
+    function isTableSeparator(line) {
+      return /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(line);
+    }
+
+    function splitTableRow(line) {
+      return line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map(cell => cell.trim());
+    }
+
+    function renderTable(rows) {
+      if (!rows.length) return "";
+      const head = rows[0].map(cell => `<th>${renderInline(cell)}</th>`).join("");
+      const body = rows.slice(1).map(row => `<tr>${row.map(cell => `<td>${renderInline(cell)}</td>`).join("")}</tr>`).join("");
+      return `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function updateHeader() {
+      const session = currentSession();
+      document.title = "童博GPT";
+      els.currentTitle.textContent = "ChatGPT";
+      els.modelPill.textContent = "";
+      els.app.classList.toggle("sidebar-collapsed", sidebarCollapsed);
+      updateModeButtons();
+    }
+
+    function updateSendButton() {
+      const hasText = els.promptInput.value.trim().length > 0;
+      const hasAttachment = pendingAttachments.length > 0;
+      const sending = isSessionGenerating(state.currentSessionId);
+      els.sendBtn.disabled = !sending && !hasText && !hasAttachment;
+      els.sendBtn.title = sending ? "停止生成" : "发送";
+      els.sendIcon.innerHTML = sending
+        ? '<path d="M7 7h10v10H7z"/>'
+        : '<path d="M12 19V5"/><path d="M5 12l7-7 7 7"/>';
+      els.generateImageBtn.disabled = sending;
+      els.generateImageBtn.title = sending ? "当前会话正在生成" : "切换图片生成模式";
+    }
+
+    function isSessionGenerating(sessionId) {
+      return Boolean(sessionId && activeRequests.has(sessionId));
+    }
+
+    function nowMs() {
+      return Date.now();
+    }
+
+    function getThinkingElapsedMs(message) {
+      const startedAt = Number(message?.thinkingStartedAt || 0);
+      if (!startedAt) return Number(message?.thinkingElapsedMs || 0);
+      const finishedAt = Number(message?.thinkingFinishedAt || 0);
+      return Math.max(0, (finishedAt || nowMs()) - startedAt);
+    }
+
+    function finishThinking(message) {
+      if (!message || !message.textGenerating) return;
+      const finishedAt = nowMs();
+      message.textGenerating = false;
+      message.thinkingFinishedAt = finishedAt;
+      message.thinkingElapsedMs = getThinkingElapsedMs(message);
+    }
+
+    function getImageElapsedMs(message) {
+      const startedAt = Number(message?.imageStartedAt || 0);
+      if (!startedAt) return Number(message?.imageElapsedMs || 0);
+      const finishedAt = Number(message?.imageFinishedAt || 0);
+      return Math.max(0, (finishedAt || nowMs()) - startedAt);
+    }
+
+    function finishImageGeneration(message) {
+      if (!message || !message.imageGenerating) return;
+      const finishedAt = nowMs();
+      message.imageGenerating = false;
+      message.imageFinishedAt = finishedAt;
+      message.imageElapsedMs = getImageElapsedMs(message);
+    }
+
+    function formatThinkingDuration(ms) {
+      const seconds = Math.max(0, Number(ms || 0) / 1000);
+      if (seconds < 60) return `${seconds.toFixed(1)} 秒`;
+      const minutes = Math.floor(seconds / 60);
+      const rest = Math.floor(seconds % 60).toString().padStart(2, "0");
+      return `${minutes}:${rest}`;
+    }
+
+    function getThinkingMode() {
+      return MODE_CONFIG[state.settings.thinkingMode] ? state.settings.thinkingMode : "standard";
+    }
+
+    function setThinkingMode(mode) {
+      if (!MODE_CONFIG[mode]) return;
+      state.settings.thinkingMode = mode;
+      saveState();
+      updateHeader();
+      toast(`已切换到${MODE_CONFIG[mode].label}`);
+    }
+
+    function normalizeImageSize(size) {
+      const value = String(size || "auto").trim();
+      const legacy = {
+        "1024x1024": "square",
+        "1024x1536": "portrait",
+        "1536x1024": "landscape"
+      };
+      if (legacy[value]) return legacy[value];
+      return IMAGE_SIZE_OPTIONS[value] ? value : "auto";
+    }
+
+    function setImageSize(size) {
+      state.settings.imageSize = normalizeImageSize(size);
+      saveState();
+      updateImageSizeButtons();
+    }
+
+    function updateImageSizeButtons() {
+      const size = normalizeImageSize(state.settings.imageSize);
+      state.settings.imageSize = size;
+      els.imageSizeLabel.textContent = IMAGE_SIZE_OPTIONS[size];
+      els.generateImageBtn.classList.toggle("active", imageModeActive);
+      els.imageSizeBtn.classList.toggle("visible", imageControlsVisible);
+      els.imageSizeMenu.querySelectorAll(".image-size-option").forEach(option => {
+        const active = option.dataset.size === size;
+        option.classList.toggle("active", active);
+        const marker = option.querySelector(".check");
+        if (marker) marker.textContent = active ? "✓" : "";
+      });
+    }
+
+    function showImageControls() {
+      imageControlsVisible = true;
+      updateImageSizeButtons();
+    }
+
+    function toggleImageMode() {
+      imageModeActive = !imageModeActive;
+      imageControlsVisible = imageModeActive;
+      toggleImageSizeMenu(false);
+      updateImageSizeButtons();
+    }
+
+    function toggleImageSizeMenu(force) {
+      const open = typeof force === "boolean" ? force : !els.imageSizeMenu.classList.contains("open");
+      els.imageSizeMenu.classList.toggle("open", open);
+      els.imageSizeBtn.setAttribute("aria-expanded", String(open));
+      if (open) positionToolMenu(els.imageSizeMenu, els.imageSizeBtn);
+    }
+
+    function positionToolMenu(menu, button) {
+      const tools = button.closest(".composer-tools");
+      if (!tools || !menu) return;
+      const toolsRect = tools.getBoundingClientRect();
+      const buttonRect = button.getBoundingClientRect();
+      const menuWidth = menu.offsetWidth || 0;
+      const rawLeft = buttonRect.left - toolsRect.left;
+      const maxLeft = Math.max(0, toolsRect.width - menuWidth);
+      menu.style.left = Math.min(Math.max(0, rawLeft), maxLeft) + "px";
+    }
+
+    function updateModeButtons() {
+      const mode = getThinkingMode();
+      els.thinkingModeLabel.textContent = mode === "deep" ? "Deep thinking" : "Thinking";
+      els.thinkingModeMenu.querySelectorAll(".mode-option").forEach(option => {
+        const active = option.dataset.mode === mode;
+        option.classList.toggle("active", active);
+        const marker = option.querySelector("span");
+        if (marker) marker.textContent = active ? "✓" : "";
+      });
+    }
+
+    function switchSession(id) {
+      state.currentSessionId = id;
+      saveState();
+      renderAll();
+      closeMobileSidebar();
+    }
+
+    function deleteSession(id) {
+      const session = state.sessions.find(s => s.id === id);
+      if (!session) return;
+      stopGeneration(id);
+      activeRequests.delete(id);
+      updateThinkingTimer();
+      state.sessions = state.sessions.filter(s => s.id !== id);
+      if (state.currentSessionId === id) {
+        const next = state.sessions.find(s => s.messages.length > 0) || createSession();
+        if (!state.sessions.some(s => s.id === next.id)) state.sessions.unshift(next);
+        state.currentSessionId = next.id;
+      }
+      saveState();
+      renderAll();
+      toast("已删除会话");
+    }
+
+    function newChat() {
+      const active = currentSession();
+      if (active && active.messages.length === 0) {
+        state.currentSessionId = active.id;
+        renderAll();
+        closeMobileSidebar();
+        els.promptInput.focus();
+        return;
+      }
+      const session = createSession();
+      state.sessions.unshift(session);
+      state.currentSessionId = session.id;
+      renderAll();
+      closeMobileSidebar();
+      els.promptInput.focus();
+    }
+
+    function resizeInput() {
+      els.promptInput.style.height = "auto";
+      els.promptInput.style.height = Math.min(els.promptInput.scrollHeight, 220) + "px";
+      updateSendButton();
+    }
+
+    function scrollToBottom() {
+      if (scrollFrame) return;
+      requestAnimationFrame(() => {
+        scrollFrame = null;
+        els.messages.scrollTop = els.messages.scrollHeight;
+        updateScrollTopButton();
+      });
+      scrollFrame = true;
+    }
+
+    function updateScrollTopButton() {
+      els.scrollTopBtn.classList.toggle("show", els.messages.scrollTop > 420);
+    }
+
+    function selectedTextForAsk() {
+      const selection = window.getSelection();
+      const text = selection ? selection.toString().trim() : "";
+      if (!selection || selection.rangeCount === 0 || text.length < 1) return null;
+      const range = selection.getRangeAt(0);
+      if (range.collapsed) return null;
+      if (els.selectionAskBtn.contains(selection.anchorNode)) return null;
+      const host = range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE
+        ? range.commonAncestorContainer
+        : range.commonAncestorContainer.parentElement;
+      if (!host || !els.messages.contains(host)) return null;
+      return { text, rect: range.getBoundingClientRect() };
+    }
+
+    function updateSelectionAskButton() {
+      const selected = selectedTextForAsk();
+      if (!selected || !selected.rect || selected.rect.width === 0 || selected.rect.height === 0) {
+        hideSelectionAskButton();
+        return;
+      }
+      const top = Math.max(10, selected.rect.top - 58);
+      const left = clamp(selected.rect.left + selected.rect.width / 2 - 86, 10, window.innerWidth - 190);
+      els.selectionAskBtn.style.left = `${left}px`;
+      els.selectionAskBtn.style.top = `${top}px`;
+      els.selectionAskBtn.dataset.selectedText = selected.text.slice(0, 8000);
+      els.selectionAskBtn.classList.add("show");
+    }
+
+    function hideSelectionAskButton() {
+      els.selectionAskBtn.classList.remove("show");
+      els.selectionAskBtn.removeAttribute("data-selected-text");
+    }
+
+    function askAboutSelection() {
+      const selected = els.selectionAskBtn.dataset.selectedText || selectedTextForAsk()?.text || "";
+      if (!selected.trim()) return;
+      const prompt = `请针对下面这段内容回答我的问题：\n\n${selected.trim()}\n\n我的问题：`;
+      els.promptInput.value = prompt;
+      resizeInput();
+      hideSelectionAskButton();
+      els.promptInput.focus();
+      els.promptInput.setSelectionRange(els.promptInput.value.length, els.promptInput.value.length);
+      scrollToBottom();
+    }
+
+    function openSettings() {
+      applySettingsToForm(state.settings);
+      els.settingsModal.classList.add("open");
+    }
+
+    function closeSettings() {
+      els.settingsModal.classList.remove("open");
+    }
+
+    function applyPreset(value) {
+      if (value === "openai") {
+        els.baseUrl.value = "https://api.openai.com";
+        els.apiPath.value = "/v1/chat/completions";
+      } else if (value === "local") {
+        els.baseUrl.value = "http://localhost:11434";
+        els.apiPath.value = "/v1/chat/completions";
+      } else if (value === "compatible") {
+        els.apiPath.value = "/v1/chat/completions";
+      } else {
+        els.apiPath.value = els.apiPath.value || "/v1/chat/completions";
+      }
+    }
+
+    function saveSettings() {
+      state.settings = collectSettingsFromForm();
+      saveState();
+      updateHeader();
+      closeSettings();
+      toast("设置已保存");
+    }
+
+    function collectSettingsFromForm() {
+      const temperature = clamp(Number(els.temperatureValue.value || els.temperature.value || 0.7), 0, 2);
+      return {
+        providerPreset: els.providerPreset.value,
+        baseUrl: cleanBaseUrl(els.baseUrl.value),
+        apiPath: cleanPath(els.apiPath.value),
+        apiKey: els.apiKey.value.trim(),
+        model: els.modelName.value.trim(),
+        imageBaseUrl: cleanBaseUrl(els.imageBaseUrl.value),
+        imageApiPath: cleanPath(els.imageApiPath.value || "/v1/images/generations"),
+        imageApiKey: els.imageApiKey.value.trim(),
+        imageModel: els.imageModel.value.trim() || "gpt-image-2",
+        imageSize: normalizeImageSize(state.settings.imageSize),
+        systemPrompt: els.systemPrompt.value,
+        temperature,
+        maxTokens: els.maxTokens.value.trim(),
+        thinkingMode: getThinkingMode()
+      };
+    }
+
+    function applySettingsToForm(settings) {
+      const merged = { ...DEFAULT_SETTINGS, ...(settings || {}) };
+      els.providerPreset.value = merged.providerPreset;
+      els.baseUrl.value = merged.baseUrl;
+      els.apiPath.value = merged.apiPath;
+      els.apiKey.value = merged.apiKey;
+      els.modelName.value = merged.model;
+      els.imageBaseUrl.value = merged.imageBaseUrl || "";
+      els.imageApiPath.value = merged.imageApiPath || "/v1/images/generations";
+      els.imageApiKey.value = merged.imageApiKey || "";
+      els.imageModel.value = merged.imageModel || "gpt-image-2";
+      els.systemPrompt.value = merged.systemPrompt;
+      els.temperature.value = merged.temperature;
+      els.temperatureValue.value = merged.temperature;
+      els.maxTokens.value = merged.maxTokens || "";
+    }
+
+    function cleanBaseUrl(url) {
+      return (url || "").trim().replace(/\/+$/, "");
+    }
+
+    function cleanPath(path) {
+      const value = (path || "/v1/chat/completions").trim();
+      return value.startsWith("/") ? value : "/" + value;
+    }
+
+    function isResponsesEndpoint(path) {
+      return /\/responses\/?$/.test(cleanPath(path));
+    }
+
+    function isAskEndpoint(path) {
+      return cleanPath(path) === "/api/ask";
+    }
+
+    function clamp(value, min, max) {
+      if (Number.isNaN(value)) return min;
+      return Math.min(max, Math.max(min, value));
+    }
+
+    async function submitMessage(event) {
+      event.preventDefault();
+      if (imageModeActive) {
+        await submitImageGeneration();
+        return;
+      }
+      const session = currentSession();
+      if (isSessionGenerating(session.id)) {
+        stopGeneration(session.id);
+        return;
+      }
+      const content = els.promptInput.value.trim();
+      if (!content && pendingAttachments.length === 0) return;
+      if (!state.settings.baseUrl || !state.settings.model) {
+        openSettings();
+        toast("请先填写 Base URL 和模型名");
+        return;
+      }
+
+      const attachments = pendingAttachments;
+      pendingAttachments = [];
+      renderAttachments();
+      const userContent = (content || "请查看附件。") + buildAttachmentText(attachments);
+      const userMessage = { id: uid(), role: "user", content: userContent, attachments, createdAt: nowIso() };
+      const assistantMessage = {
+        id: uid(),
+        role: "assistant",
+        content: "",
+        createdAt: nowIso(),
+        textGenerating: true,
+        thinkingStartedAt: nowMs(),
+        thinkingFinishedAt: 0,
+        thinkingElapsedMs: 0
+      };
+      session.messages.push(userMessage, assistantMessage);
+      if (session.title === "新聊天") session.title = titleFromMessages(session.messages);
+      session.updatedAt = nowIso();
+      els.promptInput.value = "";
+      resizeInput();
+      saveState();
+      setSessionSending(session.id, true);
+      renderAll();
+
+      try {
+        await requestChatCompletion(session, assistantMessage);
+        if (!assistantMessage.content.trim()) assistantMessage.content = "（没有收到内容）";
+      } catch (error) {
+        if (error.name === "AbortError") {
+          assistantMessage.content += assistantMessage.content ? "\n\n[已停止]" : "[已停止]";
+        } else {
+          assistantMessage.content = formatRequestError(error, state.settings);
+        }
+      } finally {
+        finishThinking(assistantMessage);
+        setSessionSending(session.id, false);
+        updateSessionMemory(session);
+        session.updatedAt = nowIso();
+        saveState();
+        updateAssistantMessage(session.id, assistantMessage.id, assistantMessage.content);
+      }
+    }
+
+    async function submitImageGeneration() {
+      const session = currentSession();
+      if (isSessionGenerating(session.id)) return;
+      const prompt = cleanImagePrompt(els.promptInput.value);
+      if (!prompt) return;
+      if (!state.settings.imageBaseUrl || !state.settings.imageModel) {
+        openSettings();
+        toast("请先填写 Image Base URL 和 Image Model");
+        return;
+      }
+
+      const userMessage = { id: uid(), role: "user", content: prompt, attachments: [], createdAt: nowIso() };
+      const assistantMessage = {
+        id: uid(),
+        role: "assistant",
+        content: "正在生成图片...",
+        attachments: [],
+        imageGenerating: true,
+        imageStartedAt: nowMs(),
+        imageFinishedAt: 0,
+        imageElapsedMs: 0,
+        createdAt: nowIso()
+      };
+      session.messages.push(userMessage, assistantMessage);
+      if (session.title === "新聊天") session.title = titleFromMessages(session.messages);
+      session.updatedAt = nowIso();
+      els.promptInput.value = "";
+      resizeInput();
+      saveState();
+      setSessionSending(session.id, true);
+      renderAll();
+
+      try {
+        const image = await requestImageGeneration(prompt, session);
+        assistantMessage.content = image.revisedPrompt ? `已生成图片。\n\n${image.revisedPrompt}` : "已生成图片。";
+        assistantMessage.attachments = [{
+          kind: "image",
+          name: "",
+          dataUrl: image.dataUrl || "",
+          url: image.url || ""
+        }];
+        if (assistantMessage.attachments[0].dataUrl) {
+          await persistImageAttachment(assistantMessage.attachments[0]);
+        }
+        renderAll();
+      } catch (error) {
+        if (error.name === "AbortError") {
+          assistantMessage.content = "[已停止]";
+        } else {
+          assistantMessage.content = formatImageRequestError(error, imageRequestSettings());
+        }
+      } finally {
+        finishImageGeneration(assistantMessage);
+        setSessionSending(session.id, false);
+        updateSessionMemory(session);
+        session.updatedAt = nowIso();
+        saveState();
+        renderAll();
+      }
+    }
+
+    function cleanImagePrompt(value) {
+      return String(value || "")
+        .trim()
+        .replace(/^(?:(?:生成图片|生图|图片)\s*[：:]\s*)+/g, "")
+        .trim();
+    }
+
+    async function requestImageGeneration(prompt, session) {
+      const settings = imageRequestSettings();
+      const request = activeRequests.get(session.id);
+      const body = {
+        model: settings.model,
+        prompt,
+        n: 1
+      };
+      if (settings.imageSize && settings.imageSize !== "auto") {
+        body.size = IMAGE_SIZE_API_VALUES[settings.imageSize] || settings.imageSize;
+      }
+      const data = await postJson(settings.baseUrl + settings.apiPath, body, settings, request?.controller.signal);
+      return extractGeneratedImage(data);
+    }
+
+    function imageRequestSettings() {
+      return {
+        baseUrl: cleanBaseUrl(state.settings.imageBaseUrl),
+        apiPath: cleanPath(state.settings.imageApiPath || "/v1/images/generations"),
+        apiKey: state.settings.imageApiKey || "",
+        model: state.settings.imageModel || "gpt-image-2",
+        imageSize: normalizeImageSize(state.settings.imageSize)
+      };
+    }
+
+    function extractGeneratedImage(data) {
+      const first = Array.isArray(data?.data) ? data.data[0] : null;
+      const b64 = first?.b64_json || findStringField(data, "b64_json");
+      const url = first?.url || findStringField(data, "url");
+      const revisedPrompt = first?.revised_prompt || data?.revised_prompt || "";
+      if (b64) return { dataUrl: b64.startsWith("data:") ? b64 : `data:image/png;base64,${b64}`, revisedPrompt };
+      if (url) return { url, revisedPrompt };
+      throw new Error("图片接口没有返回 b64_json 或 url。");
+    }
+
+    function formatImageRequestError(error, settings) {
+      const message = error.message || String(error);
+      const target = cleanBaseUrl(settings.baseUrl) + cleanPath(settings.apiPath);
+      if (/No available compatible accounts/i.test(message)) {
+        return [
+          "生成图片请求失败：图片服务没有可用的兼容账号。",
+          "",
+          `目标地址：${target}`,
+          `模型：${settings.model}`,
+          "",
+          "这通常不是前端请求格式问题，而是当前图片 API 源没有可用的 gpt-image-2 账号、额度、路由或权限。",
+          "请在设置里确认 Image Base URL、Image API Key、Image API Path 和 Image Model 使用的是专门支持生图的服务。"
+        ].join("\n");
+      }
+      if (/Upstream service temporarily unavailable|Bad Gateway|HTTP 502/i.test(message)) {
+        return [
+          "生成图片请求失败：图片上游服务暂时不可用。",
+          "",
+          `目标地址：${target}`,
+          `模型：${settings.model}`,
+          "",
+          "请求已经走到专门的生图接口，但图片服务商当前返回 502。通常需要稍后重试，或更换可用的 Image Base URL / Image API Key。"
+        ].join("\n");
+      }
+      return formatRequestError(error, settings);
+    }
+
+    function findStringField(value, key) {
+      if (!value || typeof value !== "object") return "";
+      if (typeof value[key] === "string" && value[key]) return value[key];
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          const found = findStringField(item, key);
+          if (found) return found;
+        }
+        return "";
+      }
+      for (const item of Object.values(value)) {
+        const found = findStringField(item, key);
+        if (found) return found;
+      }
+      return "";
+    }
+
+    function updateSessionMemory(session) {
+      const turns = session.messages
+        .filter(m => (m.role === "user" || m.role === "assistant") && m.content.trim())
+        .slice(-8);
+      if (turns.length < 2) return;
+      const facts = [];
+      if (session.memorySummary) facts.push(session.memorySummary);
+      turns.forEach(message => {
+        const text = normalizeMessageContent(message.content)
+          .replace(/\s+/g, " ")
+          .trim();
+        if (!text) return;
+        const label = message.role === "user" ? "用户" : "AI";
+        facts.push(`${label}: ${text.slice(0, 180)}`);
+      });
+      session.memorySummary = facts
+        .join("；")
+        .replace(/\s+/g, " ")
+        .slice(-900);
+    }
+
+    async function requestChatCompletion(session, assistantMessage) {
+      const settings = state.settings;
+      const url = cleanBaseUrl(settings.baseUrl) + cleanPath(settings.apiPath);
+      const mode = getThinkingMode();
+      const config = MODE_CONFIG[mode];
+      const request = activeRequests.get(session.id);
+      const signal = request?.controller.signal;
+
+      if (isAskEndpoint(settings.apiPath)) {
+        await requestAskEndpoint(url, session, assistantMessage, mode, signal);
+        return;
+      }
+
+      if (isResponsesEndpoint(settings.apiPath)) {
+        await requestResponsesApi(url, session, assistantMessage, mode, signal);
+        return;
+      }
+
+      const payloadMessages = [];
+      const developerPrompt = buildDeveloperPrompt(settings.systemPrompt, config.developerPrompt);
+      if (developerPrompt) {
+        payloadMessages.push({ role: preferredInstructionRole(settings), content: developerPrompt });
+      }
+      if (session.memorySummary) {
+        payloadMessages.push({
+          role: preferredInstructionRole(settings),
+          content: "历史摘要记忆（仅供参考，不要逐字复述）：\n" + session.memorySummary
+        });
+      }
+      session.messages
+        .filter(m => m.id !== assistantMessage.id && (m.role === "user" || m.role === "assistant"))
+        .slice(-12)
+        .forEach(m => payloadMessages.push(toApiMessage(m)));
+
+      const body = {
+        model: settings.model,
+        messages: payloadMessages,
+        temperature: Number(settings.temperature),
+        stream: true
+      };
+      if (settings.maxTokens) body.max_tokens = Number(settings.maxTokens);
+
+      const headers = { "Content-Type": "application/json" };
+      if (settings.apiKey) headers.Authorization = "Bearer " + settings.apiKey;
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+        signal
+      });
+
+      if (!response.ok) {
+        const text = await response.text().catch(() => "");
+        if (response.status === 401 && /API_KEY_REQUIRED|api key is required|authorization/i.test(text) && !settings.apiKey) {
+          throw new Error("HTTP 401 Unauthorized：当前没有可用 API Key。请打开设置填写第三方 API Key 并保存。");
+        }
+        throw new Error(`HTTP ${response.status} ${response.statusText}${text ? "：" + text.slice(0, 500) : ""}`);
+      }
+
+      const contentType = response.headers.get("content-type") || "";
+      if (!response.body || !contentType.includes("text/event-stream")) {
+        const data = await response.json();
+        assistantMessage.content = extractFullContent(data);
+        updateAssistantMessage(session.id, assistantMessage.id, assistantMessage.content);
+        return;
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let buffer = "";
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split(/\r?\n/);
+        buffer = lines.pop() || "";
+        for (const line of lines) {
+          if (!line.startsWith("data:")) continue;
+          const data = line.slice(5).trim();
+          if (!data || data === "[DONE]") continue;
+          try {
+            const json = JSON.parse(data);
+            const delta = json.choices?.[0]?.delta?.content
+              ?? json.choices?.[0]?.message?.content
+              ?? "";
+            if (delta) {
+              assistantMessage.content += normalizeMessageContent(delta);
+              updateAssistantMessage(session.id, assistantMessage.id, assistantMessage.content);
+            }
+          } catch (error) {
+            console.warn("无法解析流片段", error, data);
+          }
+        }
+      }
+    }
+
+    async function requestAskEndpoint(url, session, assistantMessage, mode, signal) {
+      const settings = state.settings;
+      const lastUserMessage = [...session.messages].reverse().find(m => m.role === "user");
+      const body = {
+        message: lastUserMessage ? lastUserMessage.content : "",
+        mode,
+        model: settings.model,
+        systemPrompt: settings.systemPrompt,
+        memorySummary: session.memorySummary || "",
+        temperature: Number(settings.temperature)
+      };
+      if (settings.maxTokens) body.maxTokens = Number(settings.maxTokens);
+      const data = await postJson(url, body, settings, signal);
+      assistantMessage.content = data.answer || extractFullContent(data);
+      updateAssistantMessage(session.id, assistantMessage.id, assistantMessage.content);
+    }
+
+    async function requestResponsesApi(url, session, assistantMessage, mode, signal) {
+      const settings = state.settings;
+      const config = MODE_CONFIG[mode];
+      const input = [];
+      const developerPrompt = buildDeveloperPrompt(settings.systemPrompt, config.developerPrompt);
+      if (developerPrompt) {
+        input.push({ role: "developer", content: developerPrompt });
+      }
+      if (session.memorySummary) {
+        input.push({
+          role: "developer",
+          content: "历史摘要记忆（仅供参考，不要逐字复述）：\n" + session.memorySummary
+        });
+      }
+      session.messages
+        .filter(m => m.id !== assistantMessage.id && (m.role === "user" || m.role === "assistant"))
+        .slice(-12)
+        .forEach(m => input.push(toApiMessage(m)));
+      const body = {
+        model: settings.model,
+        reasoning: { effort: config.reasoningEffort },
+        input
+      };
+      const data = await postJson(url, body, settings, signal);
+      assistantMessage.content = extractFullContent(data);
+      updateAssistantMessage(session.id, assistantMessage.id, assistantMessage.content);
+    }
+
+    async function postJson(url, body, settings, signal) {
+      const headers = { "Content-Type": "application/json" };
+      if (settings.apiKey) headers.Authorization = "Bearer " + settings.apiKey;
+      const response = await fetch(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+        signal
+      });
+      if (!response.ok) {
+        const text = await response.text().catch(() => "");
+        if (response.status === 401 && /API_KEY_REQUIRED|api key is required|authorization/i.test(text) && !settings.apiKey) {
+          throw new Error("HTTP 401 Unauthorized：当前没有可用 API Key。请打开设置填写第三方 API Key 并保存。");
+        }
+        throw new Error(`HTTP ${response.status} ${response.statusText}${text ? "：" + text.slice(0, 500) : ""}`);
+      }
+      return response.json();
+    }
+
+    function buildDeveloperPrompt(systemPrompt, modePrompt) {
+      const parts = [modePrompt];
+      if (systemPrompt && systemPrompt.trim()) {
+        parts.push("用户自定义 System Prompt：\n" + systemPrompt.trim());
+      }
+      return parts.filter(Boolean).join("\n\n");
+    }
+
+    function preferredInstructionRole(settings) {
+      return settings.providerPreset === "openai" ? "developer" : "system";
+    }
+
+    function toApiMessage(message) {
+      if (message.role !== "user" || !Array.isArray(message.attachments) || !message.attachments.some(item => item.kind === "image" && item.dataUrl)) {
+        return { role: message.role, content: message.content };
+      }
+      const content = [{ type: "text", text: message.content }];
+      message.attachments
+        .filter(item => item.kind === "image" && item.dataUrl)
+        .forEach(item => content.push({ type: "image_url", image_url: { url: item.dataUrl } }));
+      return { role: "user", content };
+    }
+
+    function extractFullContent(data) {
+      return normalizeMessageContent(data?.choices?.[0]?.message?.content
+        || data?.choices?.[0]?.text
+        || data?.output_text
+        || "");
+    }
+
+    function formatRequestError(error, settings) {
+      const message = error.message || String(error);
+      const target = cleanBaseUrl(settings.baseUrl) + cleanPath(settings.apiPath);
+      const looksLikeNetworkBlock = error instanceof TypeError
+        || /failed to fetch|networkerror|load failed|fetch/i.test(message);
+      if (looksLikeNetworkBlock) {
+        return [
+          "请求失败：浏览器没有拿到接口响应。",
+          "",
+          `目标地址：${target}`,
+          "",
+          "兼容模型常见原因：",
+          "1. 兼容接口没有开启 CORS，file:// 页面被浏览器跨域拦截。",
+          "2. Base URL 应只填域名和端口，不要重复带 /v1/chat/completions。",
+          "3. 接口路径通常是 /v1/chat/completions。",
+          "4. API Key、模型名、网络代理配置不正确，或第三方接口不允许浏览器 CORS 直连。",
+          "",
+          "请确认第三方 API 服务商支持浏览器跨域访问，并在设置里填写第三方接口的 Base URL、API Key 和模型名。"
+        ].join("\n");
+      }
+      return "请求失败：" + message;
+    }
+
+    function updateAssistantMessage(sessionId, id, content, force = false) {
+      const key = `${sessionId}:${id}`;
+      const entry = assistantRenderQueue.get(key) || {
+        sessionId,
+        id,
+        content: "",
+        visibleLength: 0,
+        timer: null,
+        lastRenderedAt: 0
+      };
+      entry.content = content;
+      assistantRenderQueue.set(key, entry);
+
+      if (entry.timer) {
+        window.clearTimeout(entry.timer);
+        entry.timer = null;
+      }
+      if (force) {
+        entry.visibleLength = normalizeMessageContent(entry.content).length;
+        renderAssistantMessageNow(entry.sessionId, entry.id, entry.content);
+        assistantRenderQueue.delete(key);
+        return;
+      }
+      scheduleTypewriterStep(entry, 0);
+    }
+
+    function scheduleTypewriterStep(entry, delay) {
+      entry.timer = window.setTimeout(() => runTypewriterStep(entry), delay);
+    }
+
+    function runTypewriterStep(entry) {
+      entry.timer = null;
+      const full = normalizeMessageContent(entry.content);
+      if (entry.visibleLength > full.length) entry.visibleLength = full.length;
+      if (entry.visibleLength >= full.length && isSessionGenerating(entry.sessionId)) {
+        scheduleTypewriterStep(entry, 160);
+        return;
+      }
+      entry.visibleLength = Math.min(full.length, entry.visibleLength + typewriterChunkSize(full));
+      const visible = full.slice(0, entry.visibleLength);
+      renderAssistantMessageNow(entry.sessionId, entry.id, visible);
+      if (entry.visibleLength < full.length || isSessionGenerating(entry.sessionId)) {
+        scheduleTypewriterStep(entry, typewriterDelayForContent(full));
+      } else {
+        assistantRenderQueue.delete(`${entry.sessionId}:${entry.id}`);
+        const session = state.sessions.find(item => item.id === entry.sessionId);
+        const message = session?.messages.find(item => item.id === entry.id);
+        if (message) delete message.displayContent;
+        renderAssistantMessageNow(entry.sessionId, entry.id, full);
+      }
+    }
+
+    function typewriterChunkSize(content) {
+      const length = normalizeMessageContent(content).length;
+      if (length > 80000) return 260;
+      if (length > 40000) return 180;
+      if (length > 12000) return 110;
+      if (length > 3000) return 64;
+      return 28;
+    }
+
+    function typewriterDelayForContent(content) {
+      const length = normalizeMessageContent(content).length;
+      if (length > 40000) return 24;
+      if (length > 12000) return 28;
+      return 34;
+    }
+
+    function renderAssistantMessageNow(sessionId, id, visibleContent) {
+      const session = state.sessions.find(item => item.id === sessionId);
+      if (!session) return;
+      if (state.currentSessionId !== sessionId) {
+        renderSessions();
+        return;
+      }
+      const rows = els.messages.querySelectorAll(".message-row");
+      const index = session.messages.findIndex(m => m.id === id);
+      if (index >= 0 && rows[index]) {
+        const message = session.messages[index];
+        const bubble = rows[index].querySelector(".bubble");
+        if (bubble) {
+          const normalized = normalizeMessageContent(visibleContent);
+          if (message) {
+            if (normalized.length < normalizeMessageContent(message.content).length) message.displayContent = normalized;
+            else delete message.displayContent;
+          }
+          const usePlainStreaming = isSessionGenerating(sessionId) && normalized.length > 24000;
+          setBubbleContent(bubble, normalized, usePlainStreaming || normalized.length > 14000);
+          bubble.classList.toggle("empty-bubble", !normalized.trim());
+        }
+        updateRenderedMessageStatus(rows[index], message, sessionId);
+        refreshThinkingTimers();
+      } else {
+        renderMessages();
+      }
+      scrollToBottom();
+    }
+
+    function updateRenderedMessageStatus(row, message, sessionId) {
+      if (!row || !message) return;
+      row.querySelectorAll(".thinking-status:not(.image-time-status)").forEach(node => node.remove());
+      const copyButton = row.querySelector(".message-copy-btn");
+      const status = renderTextThinkingStatus(message, sessionId);
+      if (status && copyButton) copyButton.insertAdjacentElement("afterend", status);
+    }
+
+    function setSessionSending(sessionId, value) {
+      if (!sessionId) return;
+      if (value) {
+        activeRequests.set(sessionId, { controller: new AbortController(), startedAt: nowMs() });
+      } else {
+        activeRequests.delete(sessionId);
+      }
+      updateThinkingTimer();
+      renderSessions();
+      updateSendButton();
+    }
+
+    function updateThinkingTimer() {
+      if (activeRequests.size && !thinkingTimer) {
+        thinkingTimer = window.setInterval(refreshThinkingTimers, 1000);
+      } else if (!activeRequests.size && thinkingTimer) {
+        window.clearInterval(thinkingTimer);
+        thinkingTimer = null;
+      }
+    }
+
+    function refreshThinkingTimers() {
+      const session = currentSession();
+      if (!session) return;
+      els.messages.querySelectorAll(".thinking-status.active").forEach(node => {
+        const message = session.messages.find(item => item.id === node.dataset.messageId);
+        const elapsed = node.querySelector(".thinking-elapsed");
+        if (!message || !elapsed) return;
+        const ms = node.dataset.timerKind === "image"
+          ? getImageElapsedMs(message)
+          : getThinkingElapsedMs(message);
+        elapsed.textContent = formatThinkingDuration(ms);
+      });
+    }
+
+    function stopGeneration(sessionId = state.currentSessionId) {
+      const request = activeRequests.get(sessionId);
+      if (request) request.controller.abort();
+    }
+
+    function openImageViewer(src) {
+      if (!src) return;
+      els.imageViewerImg.src = src;
+      els.imageViewer.classList.add("open");
+    }
+
+    function closeImageViewer() {
+      els.imageViewer.classList.remove("open");
+      els.imageViewerImg.removeAttribute("src");
+    }
+
+    function downloadImage(src, filename = "generated-image.png") {
+      const a = document.createElement("a");
+      a.href = src;
+      a.download = filename || timestampImageFilename();
+      a.rel = "noreferrer";
+      document.body.append(a);
+      a.click();
+      a.remove();
+    }
+
+    function timestampImageFilename() {
+      const stamp = new Date()
+        .toISOString()
+        .replace(/\.\d{3}Z$/, "")
+        .replace(/[-:]/g, "")
+        .replace("T", "-");
+      return `image-${stamp}.png`;
+    }
+
+    function toggleAttachMenu(force) {
+      if (!els.attachMenu) return;
+      const open = typeof force === "boolean" ? force : !els.attachMenu.classList.contains("open");
+      els.attachMenu.classList.toggle("open", open);
+    }
+
+    async function addAttachments(fileList, kind) {
+      const files = Array.from(fileList || []);
+      for (const file of files) {
+        const attachment = {
+          id: uid(),
+          kind,
+          name: file.name,
+          type: file.type || "application/octet-stream",
+          size: file.size
+        };
+        if (kind === "image") {
+          attachment.dataUrl = await readFileAsDataURL(file);
+        } else if (isReadableTextFile(file)) {
+          attachment.text = (await readFileAsText(file)).slice(0, 12000);
+        }
+        pendingAttachments.push(attachment);
+      }
+      renderAttachments();
+      updateSendButton();
+    }
+
+    function isReadableTextFile(file) {
+      return /^text\//.test(file.type)
+        || /\.(txt|md|csv|json|xml|html|css|js|ts|tsx|jsx|py|java|c|cpp|h|hpp|rs|go|sql|toml|yaml|yml|log)$/i.test(file.name);
+    }
+
+    function readFileAsText(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = reject;
+        reader.readAsText(file);
+      });
+    }
+
+    function readFileAsDataURL(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function renderAttachments() {
+      els.attachmentList.innerHTML = "";
+      els.attachmentList.classList.toggle("has-items", pendingAttachments.length > 0);
+      pendingAttachments.forEach(attachment => {
+        const chip = document.createElement("div");
+        chip.className = "attachment-chip";
+        const thumb = attachment.kind === "image" && attachment.dataUrl
+          ? `<div class="attachment-thumb"><img src="${attachment.dataUrl}" alt=""></div>`
+          : `<div class="attachment-thumb"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div>`;
+        chip.innerHTML = `${thumb}<span>${escapeHtml(attachment.name)}</span><button type="button" title="移除">×</button>`;
+        chip.querySelector("button").addEventListener("click", () => {
+          pendingAttachments = pendingAttachments.filter(item => item.id !== attachment.id);
+          renderAttachments();
+          updateSendButton();
+        });
+        els.attachmentList.append(chip);
+      });
+    }
+
+    function buildAttachmentText(attachments) {
+      if (!attachments.length) return "";
+      const lines = [];
+      attachments.forEach(attachment => {
+        if (attachment.text) {
+          lines.push("", `文件：${attachment.name}`);
+          lines.push("```");
+          lines.push(attachment.text);
+          lines.push("```");
+        }
+      });
+      return lines.length ? "\n\n" + lines.join("\n") : "";
+    }
+
+    function toggleThinkingMenu(force) {
+      const open = typeof force === "boolean" ? force : !els.thinkingModeMenu.classList.contains("open");
+      els.thinkingModeMenu.classList.toggle("open", open);
+      els.thinkingModeBtn.setAttribute("aria-expanded", String(open));
+      if (open) positionToolMenu(els.thinkingModeMenu, els.thinkingModeBtn);
+    }
+
+    async function copyCodeFromButton(button) {
+      const block = button.closest(".code-block");
+      if (!block) return;
+      const code = decodeURIComponent(block.dataset.code || "");
+      await copyText(code, "代码已复制");
+      button.title = "已复制";
+      setTimeout(() => { button.title = "复制代码"; }, 1200);
+    }
+
+    async function copyText(text, successMessage = "已复制") {
+      try {
+        await navigator.clipboard.writeText(text);
+        toast(successMessage);
+      } catch {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.append(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        textarea.remove();
+        toast(successMessage);
+      }
+    }
+
+    function copyMessageFromButton(button) {
+      const messageId = button.dataset.messageId;
+      const session = currentSession();
+      const message = session?.messages.find(item => item.id === messageId);
+      if (!message) return;
+      copyText(normalizeMessageContent(message.content), "整段已复制");
+    }
+
+    function exportJson() {
+      const data = {
+        version: 1,
+        exportedAt: nowIso(),
+        settings: { ...state.settings, apiKey: "" },
+        sessions: state.sessions
+      };
+      downloadFile("ai-chat-backup.json", JSON.stringify(data, null, 2), "application/json");
+      toast("已导出 JSON，API Key 已自动排除");
+    }
+
+    function exportSettings() {
+      const data = {
+        version: 1,
+        type: "ai-chat-settings",
+        exportedAt: nowIso(),
+        settings: collectSettingsFromForm()
+      };
+      downloadFile("ai-chat-settings.json", JSON.stringify(data, null, 2), "application/json");
+      toast("已导出设置");
+    }
+
+    function exportTxt() {
+      const blocks = state.sessions.map(session => {
+        const header = [
+          "========================================",
+          `会话：${session.title || "新聊天"}`,
+          `创建：${formatDate(session.createdAt)}`,
+          `更新：${formatDate(session.updatedAt)}`,
+          "========================================"
+        ].join("\n");
+        const body = session.messages
+          .filter(m => m.role === "user" || m.role === "assistant")
+          .map(m => `${m.role === "user" ? "我" : "AI"}（${formatDate(m.createdAt)}）：\n${m.content}`)
+          .join("\n\n----------------------------------------\n\n");
+        return header + "\n\n" + (body || "（空会话）");
+      }).join("\n\n\n");
+      downloadFile("ai-chat-export.txt", blocks, "text/plain;charset=utf-8");
+      toast("已导出 TXT");
+    }
+
+    function downloadFile(filename, content, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.append(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    async function importJsonFile(file) {
+      try {
+        const text = await file.text();
+        const imported = JSON.parse(text);
+        const incoming = Array.isArray(imported) ? imported : imported.sessions;
+        if (!Array.isArray(incoming)) throw new Error("JSON 中没有 sessions 数组");
+        const existingIds = new Set(state.sessions.map(session => session.id));
+        const existingFingerprints = new Set(state.sessions.map(sessionFingerprint));
+        let added = 0;
+        incoming.map(normalizeSession).filter(Boolean).forEach(session => {
+          const fingerprint = sessionFingerprint(session);
+          if (!existingIds.has(session.id) && !existingFingerprints.has(fingerprint)) {
+            state.sessions.push(session);
+            existingIds.add(session.id);
+            existingFingerprints.add(fingerprint);
+            added += 1;
+          }
+        });
+        if (added > 0) state.currentSessionId = state.sessions[state.sessions.length - added].id;
+        saveState();
+        renderAll();
+        toast(added ? `导入完成，新增 ${added} 个会话` : "没有重复导入，所有会话都已存在");
+      } catch (error) {
+        toast("导入失败：" + (error.message || String(error)));
+      } finally {
+        els.importFile.value = "";
+      }
+    }
+
+    async function importSettingsFile(file) {
+      try {
+        const text = await file.text();
+        const imported = JSON.parse(text);
+        const incoming = imported && typeof imported === "object" && imported.settings
+          ? imported.settings
+          : imported;
+        if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) {
+          throw new Error("JSON 中没有 settings 对象");
+        }
+        state.settings = normalizeImportedSettings(incoming, collectSettingsFromForm());
+        applySettingsToForm(state.settings);
+        saveState();
+        updateHeader();
+        toast("设置已导入");
+      } catch (error) {
+        toast("导入设置失败：" + (error.message || String(error)));
+      } finally {
+        els.settingsImportFile.value = "";
+      }
+    }
+
+    function normalizeImportedSettings(input, baseSettings = state.settings) {
+      const imported = compactImportedSettings(input, baseSettings);
+      const settings = { ...DEFAULT_SETTINGS, ...baseSettings, ...imported };
+      settings.providerPreset = String(settings.providerPreset || DEFAULT_SETTINGS.providerPreset);
+      settings.baseUrl = cleanBaseUrl(settings.baseUrl);
+      settings.apiPath = cleanPath(settings.apiPath || DEFAULT_SETTINGS.apiPath);
+      settings.apiKey = String(settings.apiKey || "");
+      settings.model = String(settings.model || DEFAULT_SETTINGS.model).trim();
+      settings.imageBaseUrl = cleanBaseUrl(settings.imageBaseUrl);
+      settings.imageApiPath = cleanPath(settings.imageApiPath || DEFAULT_SETTINGS.imageApiPath);
+      settings.imageApiKey = String(settings.imageApiKey || "");
+      settings.imageModel = String(settings.imageModel || "gpt-image-2").trim();
+      settings.imageSize = normalizeImageSize(settings.imageSize);
+      settings.systemPrompt = String(settings.systemPrompt || "");
+      settings.temperature = clamp(Number(settings.temperature ?? DEFAULT_SETTINGS.temperature), 0, 2);
+      settings.maxTokens = String(settings.maxTokens || "").trim();
+      settings.thinkingMode = MODE_CONFIG[settings.thinkingMode] ? settings.thinkingMode : DEFAULT_SETTINGS.thinkingMode;
+      return settings;
+    }
+
+    function compactImportedSettings(input, baseSettings) {
+      const output = {};
+      Object.entries(input || {}).forEach(([key, value]) => {
+        const current = baseSettings?.[key];
+        if (typeof value === "string" && value.trim() === "" && String(current || "").trim()) return;
+        output[key] = value;
+      });
+      return output;
+    }
+
+    function sessionFingerprint(session) {
+      return session.messages
+        .map(m => `${m.role}:${m.content}`)
+        .join("|");
+    }
+
+    function clearAll() {
+      if (!confirm("清空所有会话？此操作不可撤销，建议先导出 JSON。")) return;
+      const first = createSession();
+      state.sessions = [first];
+      state.currentSessionId = first.id;
+      saveState();
+      renderAll();
+      closeSettings();
+      toast("已清空所有会话");
+    }
+
+    function formatDate(value) {
+      try {
+        return new Date(value).toLocaleString();
+      } catch {
+        return value || "";
+      }
+    }
+
+    function formatMessageTime(value) {
+      try {
+        return new Date(value).toLocaleString([], {
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+      } catch {
+        return value || "";
+      }
+    }
+
+    let toastTimer = null;
+    function toast(message) {
+      clearTimeout(toastTimer);
+      els.toast.textContent = message;
+      els.toast.classList.add("show");
+      toastTimer = setTimeout(() => els.toast.classList.remove("show"), 2600);
+    }
+
+    function closeMobileSidebar() {
+      document.body.classList.remove("sidebar-open");
+    }
+
+    function toggleSidebar() {
+      if (window.matchMedia("(max-width: 760px)").matches) {
+        document.body.classList.toggle("sidebar-open");
+        return;
+      }
+      sidebarCollapsed = !sidebarCollapsed;
+      localStorage.setItem("ai-chat-sidebar-collapsed", String(sidebarCollapsed));
+      els.app.classList.toggle("sidebar-collapsed", sidebarCollapsed);
+    }
+
+    els.newChatBtn.addEventListener("click", newChat);
+    els.searchChatsBtn.addEventListener("click", () => {
+      els.sidebar.classList.toggle("search-open");
+      if (els.sidebar.classList.contains("search-open")) els.sessionSearch.focus();
+    });
+    els.exportJsonBtn.addEventListener("click", exportJson);
+    els.exportTxtBtn.addEventListener("click", exportTxt);
+    els.importBtn.addEventListener("click", () => els.importFile.click());
+    els.importFile.addEventListener("change", event => {
+      const file = event.target.files?.[0];
+      if (file) importJsonFile(file);
+    });
+    els.sessionSearch.addEventListener("input", renderSessions);
+    els.settingsBtn.addEventListener("click", openSettings);
+    els.mobileMenuBtn.addEventListener("click", toggleSidebar);
+    els.closeSettingsBtn.addEventListener("click", closeSettings);
+    els.cancelSettingsBtn.addEventListener("click", closeSettings);
+    els.saveSettingsBtn.addEventListener("click", saveSettings);
+    els.exportSettingsBtn.addEventListener("click", exportSettings);
+    els.importSettingsBtn.addEventListener("click", () => els.settingsImportFile.click());
+    els.settingsImportFile.addEventListener("change", event => {
+      const file = event.target.files?.[0];
+      if (file) importSettingsFile(file);
+    });
+    els.clearAllBtn.addEventListener("click", clearAll);
+    els.settingsModal.addEventListener("click", event => {
+      if (event.target === els.settingsModal) closeSettings();
+    });
+    els.providerPreset.addEventListener("change", event => applyPreset(event.target.value));
+    els.temperature.addEventListener("input", () => {
+      els.temperatureValue.value = els.temperature.value;
+    });
+    els.temperatureValue.addEventListener("input", () => {
+      els.temperature.value = clamp(Number(els.temperatureValue.value), 0, 2);
+    });
+    els.chatForm.addEventListener("submit", submitMessage);
+    els.addAttachmentBtn.addEventListener("click", event => {
+      event.stopPropagation();
+      toggleAttachMenu();
+    });
+    els.generateImageBtn.addEventListener("click", event => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleImageMode();
+    });
+    els.imageSizeBtn.addEventListener("click", event => {
+      event.stopPropagation();
+      toggleImageSizeMenu();
+    });
+    els.imageSizeMenu.addEventListener("click", event => {
+      const option = event.target.closest(".image-size-option");
+      if (!option) return;
+      event.stopPropagation();
+      setImageSize(option.dataset.size);
+      toggleImageSizeMenu(false);
+    });
+    els.closeImageViewerBtn.addEventListener("click", closeImageViewer);
+    els.imageViewer.addEventListener("click", event => {
+      if (event.target === els.imageViewer) closeImageViewer();
+    });
+    els.uploadFileBtn.addEventListener("click", () => {
+      toggleAttachMenu(false);
+      els.fileAttachmentInput.click();
+    });
+    els.uploadImageBtn.addEventListener("click", () => {
+      toggleAttachMenu(false);
+      els.imageAttachmentInput.click();
+    });
+    els.fileAttachmentInput.addEventListener("change", event => {
+      addAttachments(event.target.files, "file");
+      event.target.value = "";
+    });
+    els.imageAttachmentInput.addEventListener("change", event => {
+      addAttachments(event.target.files, "image");
+      event.target.value = "";
+    });
+    els.thinkingModeBtn.addEventListener("click", event => {
+      event.stopPropagation();
+      toggleThinkingMenu();
+    });
+    els.thinkingModeMenu.addEventListener("click", event => {
+      const option = event.target.closest(".mode-option");
+      if (!option) return;
+      event.stopPropagation();
+      setThinkingMode(option.dataset.mode);
+      toggleThinkingMenu(false);
+    });
+    els.messages.addEventListener("click", event => {
+      const button = event.target.closest(".code-copy");
+      if (button) {
+        copyCodeFromButton(button);
+        return;
+      }
+      const messageCopyButton = event.target.closest(".message-copy-btn");
+      if (messageCopyButton) copyMessageFromButton(messageCopyButton);
+    });
+    els.messages.addEventListener("scroll", updateScrollTopButton);
+    els.scrollTopBtn.addEventListener("click", () => {
+      els.messages.scrollTo({ top: 0, behavior: "smooth" });
+    });
+    els.selectionAskBtn.addEventListener("mousedown", event => event.preventDefault());
+    els.selectionAskBtn.addEventListener("click", askAboutSelection);
+    els.promptInput.addEventListener("input", resizeInput);
+    els.promptInput.addEventListener("keydown", event => {
+      if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
+        event.preventDefault();
+        els.chatForm.requestSubmit();
+      }
+    });
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") {
+        hideSelectionAskButton();
+        closeSettings();
+        closeMobileSidebar();
+        els.sessionList.querySelectorAll(".delete-confirm").forEach(node => node.remove());
+        toggleThinkingMenu(false);
+        toggleImageSizeMenu(false);
+        toggleAttachMenu(false);
+        closeImageViewer();
+      }
+    });
+    document.addEventListener("selectionchange", () => {
+      window.clearTimeout(updateSelectionAskButton.timer);
+      updateSelectionAskButton.timer = window.setTimeout(updateSelectionAskButton, 80);
+    });
+    document.addEventListener("mouseup", () => {
+      window.setTimeout(updateSelectionAskButton, 0);
+    });
+    document.addEventListener("scroll", hideSelectionAskButton, true);
+    document.addEventListener("click", event => {
+      if (!event.target.closest(".selection-ask-btn")) hideSelectionAskButton();
+      if (!event.target.closest(".delete-confirm") && !event.target.closest(".delete-session")) {
+        els.sessionList.querySelectorAll(".delete-confirm").forEach(node => node.remove());
+      }
+      if (!event.target.closest(".thinking-btn") && !event.target.closest(".mode-menu")) {
+        toggleThinkingMenu(false);
+      }
+      if (!event.target.closest(".image-size-btn") && !event.target.closest(".image-size-menu")) {
+        toggleImageSizeMenu(false);
+      }
+      if (!event.target.closest(".add-btn") && !event.target.closest(".attach-menu")) {
+        toggleAttachMenu(false);
+      }
+    });
+
+    renderAll();
+    hydrateStoredImages();
+  </script>
+</body>
+</html>
+
